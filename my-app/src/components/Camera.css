@@ -1,0 +1,29 @@
+.camera-container .preview-container {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .camera-container .preview-container img {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  
+  .camera-container .preview-container label {
+    display: block;
+    margin: 10px 0;
+  }
+  
+  .camera-container .preview-container button {
+    margin-top: 10px;
+  }
+    
+    
+    video {
+      border: 1px solid #ccc;
+    }
+    
+    button {
+      margin: 10px;
+    }
+    

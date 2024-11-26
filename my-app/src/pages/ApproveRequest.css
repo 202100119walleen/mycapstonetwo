@@ -1,0 +1,247 @@
+.approve-request {
+    width: 80%;
+    max-width: 700px; /* Reduced max-width for a better centered look */
+    margin: 0 auto; /* Center the container horizontally */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the form elements */
+    background-color: transparent !important;
+  }
+  
+  .approve-request h1 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .error-message {
+    color: red;
+    background-color: #ffe6e6;
+    border: 1px solid red;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    width: 100%;
+    text-align: center; /* Center error message */
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the form fields */
+    gap: 15px;
+    width: 100%; /* Ensure form takes up full container width */
+  }
+  
+  label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+    width: 100%; /* Label takes full width */
+    text-align: left; /* Left align the labels */
+  }
+  
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  select,
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #fff;
+  }
+  
+  input[type="text"]:focus,
+  input[type="date"]:focus,
+  input[type="number"]:focus,
+  select:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  button[type="submit"],
+  button[type="button"] {
+    background-color: #660809;
+    color: white;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+    width: 200px; /* Full width for buttons */
+  }
+  
+  button[type="submit"]:hover,
+  button[type="button"]:hover {
+    background-color: #0056b3;
+  }
+  
+  button[type="submit"]:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  
+  input[type="file"] {
+    margin-top: 5px;
+  }
+  
+  .approve-request > div {
+    margin-top: 30px;
+    background-color: transparent !important;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+  }
+  
+  .approve-request > div label {
+    font-weight: bold;
+  }
+  
+  button {
+    background-color: #660809; /* Theme color */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+  }
+  
+  button[type="submit"]:hover,
+  button[type="button"]:hover {
+    background-color: #850b0c;
+  }
+  
+  .college-section,
+  .category-section {
+    background-color: #ffffff;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  form div {
+    display: flex;
+    gap: 10px;
+    width: 100%; /* Ensure full width for flex containers */
+  }
+  
+  form div label {
+    margin: 0;
+  }
+  
+  select,
+  input[type="date"],
+  input[type="number"] {
+    margin-top: 5px;
+    width: 100%; /* Full width for select and input fields */
+  }
+  
+  @media (max-width: 768px) {
+    .approve-request {
+      width: 100%;
+      padding: 15px;
+    }
+  
+    form div {
+      flex-direction: column; /* Stack inputs vertically on small screens */
+    }
+  }
+  .timeframe-form {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .timeframe-form.show {
+    display: block;
+    opacity: 1;
+  }
+  
+  .timeframe-form.hide {
+    display: none;
+    opacity: 0;
+  }
+  
+  .year-selection {
+    margin-top: 15px;
+  }
+  
+  select,
+  input[type="date"],
+  input[type="number"] {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+  }
+  
+  label {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 300px; /* Set the width of the modal */
+    max-width: 90%; /* Make it responsive */
+  }
+  
+  .modal-content h2 {
+    margin-top: 0; /* Remove margin from the top of the heading */
+  }
+  
+  .modal-content label {
+    display: block; /* Make labels block to occupy full width */
+    margin: 10px 0 5px; /* Add margin for spacing */
+  }
+  
+  .modal-content input[type="email"],
+  .modal-content input[type="text"],
+  .modal-content textarea {
+    width: 100%; /* Make inputs full width */
+    padding: 8px; /* Add padding */
+    margin-bottom: 10px; /* Space below inputs */
+    border: 1px solid #ccc; /* Border styling */
+    border-radius: 4px; /* Rounded corners */
+  }
+  
+  .modal-content button {
+    margin-right: 5px; /* Add space between buttons */
+  }
+  
+  

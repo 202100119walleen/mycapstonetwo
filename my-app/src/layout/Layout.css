@@ -1,0 +1,77 @@
+/* src/components/Layout.css */
+
+.layout-container {
+    display: flex;
+    height: 100vh;
+  }
+  
+  .sidebar-nav {
+    width: 250px;
+    background-color: #660809; /* Sidebar color */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .system-namelayout{
+    font-size: 30px;
+    color: #f9f9f9;
+  }
+  .logo {
+    width: 300px; /* Adjust size as needed */
+    height: auto;
+    margin-bottom: 10px;
+  }
+  .logolayout{
+    width: 150px;
+    height: 150px;
+  }
+  .system-name {
+    font-size: 50px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+  }
+  
+  .nav-link {
+    display: flex;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+  
+  .nav-link:hover {
+    background-color: #850b0c;
+  }
+  
+  .nav-icon {
+    margin-right: 10px;
+    font-size: 18px; /* Adjust icon size as needed */
+  }
+  
+  .content {
+    flex-grow: 1;
+    background-color: #f9f9f9; /* Content background color */
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .nav-link.active {
+    background-color: #850b0c; /* Highlight color */
+    color: #fff; /* Text color for active link */
+  }
+  .nav-link.active .nav-icon {
+    color: #fff; /* Icon color for active link */
+  }
+  

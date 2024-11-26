@@ -1,0 +1,50 @@
+/* src/components/CreateAccountPage.css */
+.create-account-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .create-account-container form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .create-account-container div {
+    margin-bottom: 15px;
+  }
+  
+  .create-account-container label {
+    margin-bottom: 5px;
+  }
+  
+  .create-account-container input {
+    padding: 8px;
+    font-size: 16px;
+  }
+  
+  .create-account-container button {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #a30101d4 ;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .create-account-container .back-button {
+    background-color: #a72e2e;
+  }
+  
+  .create-account-container .error {
+    color: red;
+  }
+  
+  .create-account-container .success {
+    color: green;
+  }
+  

@@ -1,0 +1,208 @@
+.manage-item-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .add-item, .edit-item {
+    margin: 20px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .add-item input, .add-item select, .edit-item input, .edit-item select {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+  }
+  
+  .add-item input:focus, .edit-item input:focus, 
+  .add-item select:focus, .edit-item select:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  .add-item button, .edit-item button {
+    padding: 10px 15px;
+    background-color: #660809;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .add-item button:hover, .edit-item button:hover {
+    background-color: #850b0c;
+  }
+  
+  .item-list table {
+    width: 100%; /* Keep table width full to fit container */
+    border-collapse: collapse;
+    margin-top: 5px; /* Reduced margin for a smaller gap */
+  }
+  
+  .item-list th, .item-list td {
+    padding: 4px; /* Reduced padding for a tighter, more compact design */
+    text-align: left;
+    border-bottom: 1px solid #660809;
+    font-size: 14px; /* Increased font size for better readability */
+  }
+  
+  .item-list th {
+    background-color: #660809;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .item-list td {
+    background-color: #fff;
+    height: 25px; /* Reduced row height to make the rows even more compact */
+  }
+  
+  .item-list tr:hover {
+    background-color: #f5f5f5;
+  }
+  
+  /* Styling the barcode for smaller size */
+  svg {
+    width: 80px; /* Adjust the width to make the barcode smaller */
+    height: 30px; /* Adjust the height to make the barcode smaller */
+  }
+  
+  .college-section {
+    margin-bottom: 15px; /* Reduced margin for a tighter layout */
+  }
+  
+  .college-header {
+    font-size: 1.1em; /* Increased font size for compactness */
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #ececec;
+    padding: 8px; /* Reduced padding for a smaller button-like feel */
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .college-header:hover {
+    background-color: #ddd;
+  }
+  
+  img {
+    width: 100%; /* Ensure image fits the container */
+    height: auto;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .folder-section {
+    margin-bottom: 10px; /* Reduced margin for a tighter fit */
+  }
+  
+  .folder-header {
+    font-size: 16px; /* Increased font size for folder headers */
+    font-weight: bold;
+    padding: 6px; /* Reduced padding for compact design */
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .folder-header:hover {
+    background-color: #e0e0e0;
+  }
+  
+  button {
+    margin: 4px; /* Reduced margins for more compact buttons */
+    padding: 6px 10px; /* Smaller button padding */
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .add-item, .edit-item {
+      flex-direction: column;
+      gap: 8px; /* Reduced gap for smaller screens */
+    }
+  
+    img {
+      width: 100%;
+      height: auto;
+    }
+  
+    .item-list table {
+      font-size: 12px; /* Adjusted font size for small screens */
+      padding: 3px; /* Reduced padding for smaller screens */
+    }
+  
+    .college-header {
+      font-size: 1em; /* Adjusted font size for mobile devices */
+      padding: 6px; /* Reduced padding */
+    }
+  
+    .folder-header {
+      font-size: 14px; /* Adjusted font size for folder headers */
+      padding: 4px; /* Reduced padding for mobile */
+    }
+  
+    button {
+      padding: 4px 8px; /* Smaller buttons for mobile */
+    }
+  }
+  .notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #850b0c; /* Success green */
+    color: white;
+    padding: 15px 30px;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    animation: fadeInOut 3s ease forwards;
+    z-index: 1000;
+  }
+  
+  @keyframes fadeInOut {
+    0% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    10%, 90% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  }
+  

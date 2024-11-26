@@ -1,0 +1,130 @@
+    /* Scanner Container */
+.customscanner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    max-width: 800px;
+    margin: auto;
+  }
+  
+  /* Title */
+  .customscanner-title {
+    margin-bottom: 20px;
+    font-size: 28px;
+    text-align: center;
+  }
+  
+  /* Form */
+  .customscanner-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Input Field */
+  .customscanner-input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  /* Button */
+  .customscanner-btn {
+    width: 30%;
+    padding: 12px;
+    background-color: #660809;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  
+  .customscanner-btn:hover {
+    background-color: #850b0c;
+  }
+  
+  /* Message */
+  .customscanner-message {
+    color: #333;
+    margin-top: 10px;
+    font-size: 16px;
+  }
+  
+  /* Searched Item Details */
+  .customscanner-searched-item {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 4px;
+    width: 100%;
+    background-color: #f9f9f9;
+  }
+  
+  .customscanner-searched-item p {
+    margin: 5px 0;
+  }
+  
+  /* Camera Select */
+  .customscanner-camera-select {
+    margin-top: 20px;
+  }
+  
+  .customscanner-select {
+    padding: 10px;
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  /* Camera */
+  .customscanner-camera {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .customscanner-camera button {
+    margin-top: 10px;
+  }
+  
+  /* Item List */
+  .customscanner-items-title {
+    margin-top: 40px;
+    font-size: 24px;
+  }
+  
+  .customscanner-item-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .customscanner-item {
+    margin: 10px 0;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+  }
+  
+  .customscanner-item svg {
+    margin-top: 10px;
+  }
+  
+  /* Save Button */
+  .customscanner-item .customscanner-btn {
+    margin-top: 10px;
+    background-color: #850b0c;
+  }
+  
+  .customscanner-item .customscanner-btn:hover {
+    background-color: #850b0c;
+  }
+  
