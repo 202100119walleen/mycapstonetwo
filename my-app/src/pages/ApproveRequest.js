@@ -1,23 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
 import emailjs from 'emailjs-com';
 import './ApproveRequest.css';
 
-
 const categories = ["Equipment", "Office Supplies", "Books", "Electrical Parts"];
 const nonAcademicOptions = [
   "FINANCE OFFICE", "OFFICE OF THE PRESIDENT", "HUMAN RESOURCE", "LIBRARY", "MANAGEMENT INFORMATION SYSTEM",
   "OFFICE OF THE REGISTRAR", "OFFICE OF THE STUDENT AFFAIRS AND SERVICES", "RESEARCH AND CREATIVE WORKS",
-  "ACCOUNTING", "CLINIC", "GUIDANCE OFFICE", "NATIONAL SERVICE TRAINING PROGRAM", 
+  "ACCOUNTING", "CLINIC", "GUIDANCE OFFICE", "NATIONAL SERVICE TRAINING PROGRAM",
 ];
 const academicColleges = [
   "COLLEGE OF ARTS AND SCIENCES", "COLLEGE OF BUSINESS ADMINISTRATION",
   "COLLEGE OF COMPUTER STUDIES", "COLLEGE OF CRIMINOLOGY", "COLLEGE OF EDUCATION",
   "COLLEGE OF ENGINEERING", "BED"
 ];
-
 
 const academicPrograms = {
   "COLLEGE OF ARTS AND SCIENCES": [
@@ -67,6 +64,7 @@ const ApproveRequest = () => {
     program: '',
     requestDate: '',
     requestPurpose: '',
+    supplierName: '', // Added supplierName field
     approved: false,
     imageUrl: ''
   });
@@ -79,16 +77,12 @@ const ApproveRequest = () => {
   const [openFolders, setOpenFolders] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentRequest, setCurrentRequest] = useState(null);
-  const [formData, setFormData] = useState({ purchaseDate: '', requestorEmail: '', requestorPhone: '' }); // Add requestorPhone
+  const [formData, setFormData] = useState({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
-  const [imagePreview, setImagePreview] = useState(''); // For image preview
-const [cameraActive, setCameraActive] = useState(false); // For toggling camera
+  const [imagePreview, setImagePreview] = useState('');
+  const [cameraActive, setCameraActive] = useState(false); 
 
-
-
-  
-  
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
     const unsubscribe = onSnapshot(requestCollection, (snapshot) => {
@@ -118,10 +112,9 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
     }
   
     await submitRequest();
-    resetForm(); // Reset the form and clear the image preview
+    resetForm();
   };
   
-
   const submitRequest = async () => {
     try {
       if (editingRequest) {
@@ -135,9 +128,9 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
         await addDoc(collection(db, 'requests'), {
           ...requestDetails,
           requestDate: new Date(requestDetails.requestDate).getTime(),
-          requestorEmail: formData.requestorEmail, // Include email
+          requestorEmail: formData.requestorEmail,
           approved: false,
-      });
+        });
       }
       resetForm();
     } catch (error) {
@@ -155,14 +148,14 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
       program: '',
       requestDate: '',
       requestPurpose: '',
+      supplierName: '', // Reset supplierName field
       approved: false,
       imageUrl: '',
     });
     setEditingRequest(null);
     setErrorMessage('');
-    setImagePreview(''); // Clear the image preview
+    setImagePreview('');
   };
-  
 
   const deleteRequest = async (id) => {
     try {
@@ -207,10 +200,11 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
                       <li key={request.id}>
                         <div>
                           <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+                          <p><strong>Supplier Name:</strong> {request.supplierName}</p> {/* Display supplier name */}
                           <p><strong>Category:</strong> {request.category}</p>
                           <p><strong>Main Category:</strong> {request.college}</p>
                           <p><strong>Subcategory:</strong> {request.department}</p>
-                          <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p> {/* Displaying Academic Program */}
+                          <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
                           <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
                           <p><strong>Unique ID:</strong> {request.uniqueId}</p>
                           <strong>Requested Items:</strong>
@@ -228,7 +222,6 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
                                 ))
                             }
                           </ul>
-                          {/* Always show delete button */}
                           <button onClick={() => deleteRequest(request.id)}>Delete</button>
                           {!request.approved && (
                             <>
@@ -236,6 +229,7 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
                               <button onClick={() => {
                                 setEditingRequest(request);
                                 setRequestDetails({
+                             
                                   itemName: request.itemName,
                                   category: request.category,
                                   uniqueId: request.uniqueId,
@@ -244,6 +238,7 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
                                   program: request.program,
                                   requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
                                   requestPurpose: request.requestPurpose,
+                                  supplierName: request.supplierName, // Set supplierName for editing
                                 });
                               }}>Edit</button>
                             </>
@@ -301,28 +296,25 @@ const [cameraActive, setCameraActive] = useState(false); // For toggling camera
 
     const requestRef = doc(db, 'requests', currentRequest.id);
     
-    // Check if all items are processed (marked as ✔️ or ❌)
     const allItemsDone = itemsUpdated.every(item => item.includes('✔️') || item.includes('❌'));
     
     try {
         await updateDoc(requestRef, {
             itemName: itemsUpdated.join(', '),
-            approved: allItemsDone  // Mark as done if all items are processed
+            approved: allItemsDone
         });
 
-        // Prepare email template parameters with context
         const templateParams = {
-            to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com', // Use requestor's email if provided
+            to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com',
             items: itemsUpdated.join(', '),
             action: selectedAction,
             purchaseDate: formData.purchaseDate,
-            requestPurpose: currentRequest.requestPurpose, // Adding request purpose
-            college: currentRequest.college,               // Adding college
-            department: currentRequest.department,         // Adding department if needed
-            uniqueId: currentRequest.uniqueId              // Including unique request ID for reference
+            requestPurpose: currentRequest.requestPurpose,
+            college: currentRequest.college,
+            department: currentRequest.department,
+            uniqueId: currentRequest.uniqueId
         };
 
-        // Send email using EmailJS
         await emailjs.send('service_bl8cece', 'template_2914ned', templateParams, 'BMRt6JigJjznZL-FA');
 
         closeModal();
@@ -340,10 +332,11 @@ const handleImageUpload = (e) => {
 
     setRequestDetails((prev) => ({
       ...prev,
-      imageUrl: URL.createObjectURL(file), // Save image URL for database
+      imageUrl: URL.createObjectURL(file),
     }));
   }
 };
+
 const startCamera = () => {
   navigator.mediaDevices
     .getUserMedia({ video: true })
@@ -369,7 +362,7 @@ const captureImage = () => {
 
   setRequestDetails((prev) => ({
     ...prev,
-    imageUrl: imageData, // Save captured image as Base64
+    imageUrl: imageData,
   }));
   stopCamera();
 };
@@ -383,45 +376,49 @@ const stopCamera = () => {
   }
   setCameraActive(false);
 };
-  
 
   return (
     <div className="approve-request">
       <h1>Approve Requests</h1>
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
+      {errorMessage && <p className="error-message">{errorMessage}</ p>}
       <div className="view-mode-section">
         <label>
           View Mode: 
           <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
             <option value="allFolders">All Folders</option>
-            <option value="nonAcademic">Non Academic Folder</option>
+            <option value="nonAcademic"> Non Academic Folder</option>
             <option value="academic">Academic Folder</option>
           </select>
         </label>
-        
       </div>
 
       {/* Request Form */}
       <form onSubmit={handleSubmit}>
-<label>Item Name (separate by commas): 
-  <input type="text" name="itemName" value={requestDetails.itemName} onChange={handleInputChange} required />
-</label>
-<label>Request Purpose: 
-  <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
-</label>
-<label>Category: 
-  <select name="category" value={requestDetails.category} onChange={handleInputChange}>
-    <option value="">Select Category</option>
-    {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-  </select>
-</label>
-<label>Main Category: 
-  <select name="college" value={requestDetails.college} onChange={handleInputChange}>
-    <option value="">Select Main Category</option>
-    <option value="Non Academic">Non Academic</option>
-    <option value="Academic">Academic</option>
-  </select>
-</label>
+        <label>Unique ID: 
+          <input type="text" name="uniqueId" value={requestDetails.uniqueId} onChange={handleInputChange} required />
+        </label>
+        <label>Item Name (separate by commas): 
+          <input type="text" name="itemName" value={requestDetails.itemName} onChange={handleInputChange} required />
+        </label>
+        <label>Request Purpose: 
+          <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
+        </label>
+        <label>Supplier Name: 
+          <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required /> {/* New Supplier Name Field */}
+        </label>
+        <label>Category: 
+          <select name="category" value={requestDetails.category} onChange={handleInputChange}>
+            <option value="">Select Category</option>
+            {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+        </label>
+        <label>Main Category: 
+          <select name="college" value={requestDetails.college} onChange={handleInputChange}>
+            <option value="">Select Main Category</option>
+            <option value="Non Academic">Non Academic</option>
+            <option value="Academic">Academic</option>
+          </select>
+        </label>
         {requestDetails.college === "Non Academic" && (
           <label>Subcategory: 
             <select name="department" value={requestDetails.department} onChange={handleInputChange}>
@@ -451,36 +448,34 @@ const stopCamera = () => {
           </>
         )}
         <label>Request Date: <input type="date" name="requestDate" value={requestDetails.requestDate} onChange={handleInputChange} required /></label>
-        <label>Unique ID: <input type="text" name="uniqueId" value={requestDetails.uniqueId} onChange={handleInputChange} required /></label>
         
         <div className="image-upload-section">
-  <h3>Upload Image</h3>
-  <input type="file" accept="image/*" onChange={handleImageUpload} />
-</div>
-<div className="camera-section">
-  <h3>Capture Image</h3>
-  <button type="button" onClick={startCamera} disabled={cameraActive}>
-    Open Camera
-  </button>
-  {cameraActive && (
-    <div className="camera-preview">
-      <video id="cameraVideo" autoPlay></video>
-      <button type="button" onClick={captureImage}>Capture</button>
-      <button type="button" onClick={stopCamera}>Cancel</button>
-    </div>
-  )}
-</div>
+          <h3>Upload Image</h3>
+          <input type="file" accept="image/*" onChange={handleImageUpload} />
+        </div>
+        <div className="camera-section">
+          <h3>Capture Image</h3>
+          <button type="button" onClick={startCamera} disabled={cameraActive}>
+            Open Camera
+          </button>
+          {cameraActive && (
+            <div className="camera-preview">
+              <video id="cameraVideo" autoPlay></video>
+              <button type="button" onClick={captureImage}>Capture</button>
+              <button type="button" onClick={stopCamera}>Cancel</button>
+            </div>
+          )}
+        </div>
 
-{/* Image Preview Section */}
-{imagePreview && (
-  <div className="image-preview">
-    <h4>Preview:</h4>
-    <img src={imagePreview} alt="Uploaded or Captured" />
-  </div>
-)}
-<button type="submit">{editingRequest ? 'Update Request' : 'Submit Request'}</button>
+        {/* Image Preview Section */}
+        {imagePreview && (
+          <div className="image-preview">
+            <h4>Preview:</h4>
+            <img src={imagePreview} alt="Uploaded or Captured" />
+          </div>
+        )}
+        <button type="submit">{editingRequest ? 'Update Request' : 'Submit Request'}</button>
       </form>
-      
 
       {/* Display Submitted Requests */}
       <h2>Submitted Requests</h2>
@@ -501,91 +496,82 @@ const stopCamera = () => {
 
       {/* Modal for Emailing Requestor */}
       {isModalOpen && currentRequest && (
-  <div className="modal-overlay">
-    <div className="modal-content">
-      <h2>Process Request</h2>
-      <h3>Requested Items:</h3>
-      <ul>
-        {(Array.isArray(currentRequest.itemName) ? currentRequest.itemName : currentRequest.itemName.split(',')).map(item => (
-          <li key={item.trim()} onClick={() => handleItemClick(item.trim())} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-            {item.trim()}
-          </li>
-        ))}
-      </ul>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Process Request</h2>
+            <h3>Requested Items:</h3>
+            <ul>
+              {(Array.isArray(currentRequest.itemName) ? currentRequest.itemName : currentRequest.itemName.split(',')).map(item => (
+                <li key={item.trim()} onClick={() => handleItemClick(item.trim())} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                  {item.trim()}
+                </li>
+              ))}
+            </ul>
 
-      <label>
-        Action:
-        <select onChange={(e) => handleActionChange(e.target.value)} value={selectedAction}>
-          <option value="">Select Action</option>
-          <option value="Purchased">Purchased</option>
-          <option value="Out of Stock">Out of Stock</option>
-        </select>
-      </label>
+            <label>
+              Action:
+              <select onChange={(e) => handleActionChange(e.target.value)} value={selectedAction}>
+                <option value="">Select Action</option>
+                <option value="Purchased">Purchased</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </label>
 
-      {selectedAction && (
-  <form onSubmit={handleEmailSubmit}>
-    <label>
-      Items (auto-filled from selection):
-      <textarea
-        name="items"
-        value={selectedItems.join(', ')}
-        onChange={handleFormDataChange}
-        readOnly
-      />
-    </label>
+            {selectedAction && (
+              <form onSubmit={handleEmailSubmit}>
+                <label>
+                  Items (auto-filled from selection):
+                  <textarea
+                    name="items"
+                    value={selectedItems.join(', ')}
+                    onChange={handleFormDataChange}
+                    readOnly
+                  />
+                </label>
 
-    {selectedAction === "Purchased" && (
-      <>
-        <label>
-          Date of Purchase:
-          <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
-        </label>
-        <label>
-  Requestor Email:
-  <input
-      type="email"
-      name="requestorEmail"
-      value={formData.requestorEmail}
-      onChange={handleFormDataChange}
-      required
-  />
-</label>
-        <label>
-          Requestor's Phone:
-          <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-        </label>
-      </>
-    )}
+                {selectedAction === "Purchased" && (
+                  <>
+                    <label>
+                      Date of Purchase:
+                      <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
+                    </label>
+                    <label>
+                      Requestor Email:
+                      <input
+                        type="email"
+                        name="requestorEmail"
+                        value={formData.requestorEmail}
+                        onChange={handleFormDataChange}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Requestor's Phone:
+                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                    </label>
+                  </>
+                )}
 
-    {selectedAction === "Out of Stock" && (
-      <>
-        <label>
-          Requestor Email:
-          <input type="email" name="requestorEmail" value={formData.requestorEmail} onChange={handleFormDataChange} required />
-        </label>
-        <label>
-          Requestor Phone:
-          <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-        </label>
-      </>
-    )}
-    <button type="submit">Submit</button>
-    <button type="button" onClick={closeModal}>Cancel</button>
-  </form>
-  
-)}
-
-
+                {selectedAction === "Out of Stock" && (
+                  <>
+                    <label>
+                      Requestor Email:
+                      <input type="email" name="requestorEmail" value={formData.requestorEmail} onChange={handleFormDataChange} required />
+                    </label>
+                    <label>
+                      Requestor Phone:
+                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                    </label>
+                  </>
+                )}
+                <button type="submit">Submit</button>
+                <button type="button" onClick={closeModal}>Cancel</button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-  
-)}
-
-
-
-    
-    </div>
-    
   );
 };
 
