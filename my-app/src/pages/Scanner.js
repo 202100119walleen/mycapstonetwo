@@ -15,8 +15,8 @@ const Scanner = () => {
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [videoDevices, setVideoDevices] = useState([]);
   const [searchedItem, setSearchedItem] = useState(null);
-  const [deletedLogs, setDeletedLogs] = useState([]); // State for deleted logs
-  const [showDeletedLogs, setShowDeletedLogs] = useState(false); // State to control visibility of Deleted Logs
+  const [deletedLogs, setDeletedLogs] = useState([]); // Deleted items logs
+  const [showDeletedLogs, setShowDeletedLogs] = useState(false); // Control visibility of logs
   const webcamRef = useRef(null);
   const codeReader = useRef(new BrowserMultiFormatReader());
 
@@ -42,12 +42,12 @@ const Scanner = () => {
     getDevices();
   }, []);
 
-  // Fetch items when component mounts
+  // Fetch items when the component mounts
   useEffect(() => {
     fetchItems();
   }, []);
 
-  // Handle barcode scan to update/delete or search item
+  // Handle barcode scan
   const handleBarcodeScan = useCallback(async (barcode) => {
     const item = items.find(item => item.barcode === barcode);
     if (item) {
@@ -69,7 +69,7 @@ const Scanner = () => {
               barcode: item.barcode,
               deletedAt: new Date().toLocaleString()
             }
-          ]); // Add log entry for deleted item
+          ]);
           setMessage(`Item '${item.text}' deleted as quantity is now zero.`);
         } else {
           await updateDoc(itemDoc, { quantity: updatedQuantity });
@@ -83,7 +83,7 @@ const Scanner = () => {
     }
   }, [items, quantityInput, searchMode]);
 
-  // Handle scanning from the camera
+  // Handle camera scan
   const handleScanFromCamera = useCallback(() => {
     if (webcamRef.current) {
       codeReader.current.decodeFromVideoDevice(selectedDeviceId, webcamRef.current.video, (result, err) => {
@@ -98,7 +98,7 @@ const Scanner = () => {
     }
   }, [selectedDeviceId, handleBarcodeScan, searchMode]);
 
-  // Start or stop camera scanning
+  // Enable or disable camera
   useEffect(() => {
     if (cameraEnabled) {
       handleScanFromCamera();
@@ -107,7 +107,7 @@ const Scanner = () => {
     }
   }, [cameraEnabled, handleScanFromCamera]);
 
-  // Render barcode for each item
+  // Render barcode for an item
   const renderBarcode = (barcode, elementId) => {
     if (barcode) {
       JsBarcode(`#${elementId}`, barcode, {
@@ -251,10 +251,10 @@ const Scanner = () => {
 
       {showDeletedLogs && (
         <div>
-          <h2 className="customscanner-deleted-logs-title">Deleted Items Log</h2>
-          <ul className="customscanner-deleted-log-list">
-            {deletedLogs.map((log, index) => (
-              <li key={index} className="customscanner-log-item">
+          <h2 className="customscanner-deleted-log-title">Deleted Items Log</h2>
+          <ul className="customscanner-deleted-log">
+            {deletedLogs.map(log => (
+              <li key={log.id}>
                 {log.text} - Barcode: {log.barcode} - Deleted At: {log.deletedAt}
               </li>
             ))}

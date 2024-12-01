@@ -46,8 +46,9 @@ const Camera = ({ onCapture, onClose }) => {
     detectAndStartCamera();
 
     return () => {
+      // Cleanup function to stop the camera stream
       if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+        stream.getTracks().forEach(track => track.stop());
       }
       if (videoElement) {
         videoElement.srcObject = null;

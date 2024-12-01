@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase/firebase-config';
+import { db, storage } from '../firebase/firebase-config'; // Import storage
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import storage functions
 import emailjs from 'emailjs-com';
 import './ApproveRequest.css';
 
@@ -64,15 +65,16 @@ const ApproveRequest = () => {
     program: '',
     requestDate: '',
     requestPurpose: '',
-    supplierName: '', // Added supplierName field
+    supplierName: '',
+    quantity: '',
     approved: false,
-    imageUrl: ''
+    imageUrl: '',
+    specificType: '' // New field for specific type based on category
   });
 
   const [requests, setRequests] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
-  
   const [viewMode, setViewMode] = useState('allFolders');
   const [openFolders, setOpenFolders] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,7 +83,9 @@ const ApproveRequest = () => {
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const [imagePreview, setImagePreview] = useState('');
-  const [cameraActive, setCameraActive] = useState(false); 
+  const [cameraActive, setCameraActive] = useState(false);
+  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' }); // Default to user camera
+  const videoRef = useRef(null); // Reference for the video element
 
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
@@ -110,11 +114,11 @@ const ApproveRequest = () => {
       setErrorMessage('Error: Request Number (Unique ID) must be unique.');
       return;
     }
-  
+
     await submitRequest();
-    resetForm();
+    resetForm(); // This will reset the form and the image upload
   };
-  
+
   const submitRequest = async () => {
     try {
       if (editingRequest) {
@@ -148,13 +152,20 @@ const ApproveRequest = () => {
       program: '',
       requestDate: '',
       requestPurpose: '',
-      supplierName: '', // Reset supplierName field
+      supplierName: '',
+      quantity: '',
       approved: false,
       imageUrl: '',
+      specificType: '' // Reset specific type
     });
     setEditingRequest(null);
     setErrorMessage('');
-    setImagePreview('');
+    setImagePreview(''); // Reset image preview
+
+    const imageInput = document.getElementById('imageInput');
+    if (imageInput) {
+      imageInput.value = ''; // Reset file input
+    }
   };
 
   const deleteRequest = async (id) => {
@@ -200,10 +211,12 @@ const ApproveRequest = () => {
                       <li key={request.id}>
                         <div>
                           <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-                          <p><strong>Supplier Name:</strong> {request.supplierName}</p> {/* Display supplier name */}
+                          <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+                          <p><strong>Quantity:</strong> {request.quantity}</p>
                           <p><strong>Category:</strong> {request.category}</p>
                           <p><strong>Main Category:</strong> {request.college}</p>
                           <p><strong>Subcategory:</strong> {request.department}</p>
+                          <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
                           <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
                           <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
                           <p><strong>Unique ID:</strong> {request.uniqueId}</p>
@@ -222,6 +235,12 @@ const ApproveRequest = () => {
                                 ))
                             }
                           </ul>
+                          {request.imageUrl && (
+                            <div className="image-preview">
+                              <h4>Uploaded Image:</h4>
+                              <img src={request.imageUrl} alt="Uploaded" />
+                            </div>
+                          )}
                           <button onClick={() => deleteRequest(request.id)}>Delete</button>
                           {!request.approved && (
                             <>
@@ -229,7 +248,6 @@ const ApproveRequest = () => {
                               <button onClick={() => {
                                 setEditingRequest(request);
                                 setRequestDetails({
-                             
                                   itemName: request.itemName,
                                   category: request.category,
                                   uniqueId: request.uniqueId,
@@ -238,7 +256,10 @@ const ApproveRequest = () => {
                                   program: request.program,
                                   requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
                                   requestPurpose: request.requestPurpose,
-                                  supplierName: request.supplierName, // Set supplierName for editing
+                                  supplierName: request.supplierName,
+                                  quantity: request.quantity,
+                                  imageUrl: request.imageUrl, // Set imageUrl for editing
+                                  specificType: request.specificType // Set specific type for editing
                                 });
                               }}>Edit</button>
                             </>
@@ -260,7 +281,7 @@ const ApproveRequest = () => {
     setCurrentRequest(request);
     setSelectedAction('');
     setSelectedItems([]);
-    setFormData({ purchaseDate: '', requestorEmail: '' });
+    setFormData({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
     setIsModalOpen(true);
   };
 
@@ -323,52 +344,74 @@ const ApproveRequest = () => {
     }
 };
 
-const handleImageUpload = (e) => {
+const handleImageUpload = async (e) => {
   const file = e.target.files[0];
   if (file) {
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
+    const storageRef = ref(storage, `images/${file.name}`);
+    try {
+      // Upload the file
+      await uploadBytes(storageRef, file);
 
-    setRequestDetails((prev) => ({
-      ...prev,
-      imageUrl: URL.createObjectURL(file),
-    }));
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+
+      setImagePreview(downloadURL);
+      setRequestDetails((prev) => ({
+        ...prev,
+        imageUrl: downloadURL,
+      }));
+    } catch (error) {
+      console.error ('Error uploading file:', error);
+    }
   }
 };
 
-const startCamera = () => {
-  navigator.mediaDevices
-    .getUserMedia({ video: true })
-    .then((stream) => {
-      const video = document.getElementById('cameraVideo');
-      video.srcObject = stream;
-      video.play();
-      setCameraActive(true);
-    })
-    .catch((err) => {
-      console.error('Camera access denied:', err);
-    });
+const startCamera = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play();
+    }
+    setCameraActive(true);
+  } catch (err) {
+    console.error('Camera access denied:', err);
+  }
+};
+
+const toggleCamera = () => {
+  setVideoConstraints((prev) => ({
+    facingMode: prev.facingMode === 'user' ? 'environment' : 'user', // Toggle between user and environment camera
+  }));
 };
 
 const captureImage = () => {
   const canvas = document.createElement('canvas');
-  const video = document.getElementById('cameraVideo');
+  const video = videoRef.current;
+
+  // Set the canvas dimensions to match the video
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  const imageData = canvas.toDataURL('image/png');
-  setImagePreview(imageData);
 
+  // Draw the current frame from the video onto the canvas
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  // Get the image data from the canvas
+  const imageData = canvas.toDataURL('image/png');
+
+  // Set the image preview and update the request details with the image URL
+  setImagePreview(imageData);
   setRequestDetails((prev) => ({
     ...prev,
     imageUrl: imageData,
   }));
+
+  // Stop the camera after capturing the image
   stopCamera();
 };
 
 const stopCamera = () => {
-  const video = document.getElementById('cameraVideo');
+  const video = videoRef.current;
   if (video?.srcObject) {
     const tracks = video.srcObject.getTracks();
     tracks.forEach((track) => track.stop());
@@ -377,202 +420,221 @@ const stopCamera = () => {
   setCameraActive(false);
 };
 
-  return (
-    <div className="approve-request">
-      <h1>Approve Requests</h1>
-      {errorMessage && <p className="error-message">{errorMessage}</ p>}
-      <div className="view-mode-section">
-        <label>
-          View Mode: 
-          <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
-            <option value="allFolders">All Folders</option>
-            <option value="nonAcademic"> Non Academic Folder</option>
-            <option value="academic">Academic Folder</option>
-          </select>
-        </label>
-      </div>
+return (
+  <div className="approve-request">
+    <h1>Approve Requests</h1>
+    {errorMessage && <p className="error-message">{errorMessage}</p>}
+    <div className="view-mode-section">
+      <label>
+        View Mode: 
+        <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
+          <option value="allFolders">All Folders</option>
+          <option value="nonAcademic"> Non Academic Folder</option>
+          <option value="academic">Academic Folder</option>
+        </select>
+      </label>
+    </div>
 
-      {/* Request Form */}
-      <form onSubmit={handleSubmit}>
-        <label>Unique ID: 
-          <input type="text" name="uniqueId" value={requestDetails.uniqueId} onChange={handleInputChange} required />
-        </label>
-        <label>Item Name (separate by commas): 
-          <input type="text" name="itemName" value={requestDetails.itemName} onChange={handleInputChange} required />
-        </label>
-        <label>Request Purpose: 
-          <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
-        </label>
-        <label>Supplier Name: 
-          <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required /> {/* New Supplier Name Field */}
-        </label>
-        <label>Category: 
-          <select name="category" value={requestDetails.category} onChange={handleInputChange}>
-            <option value="">Select Category</option>
-            {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+    {/* Request Form */}
+    <form onSubmit={handleSubmit}>
+      <label>Unique ID: 
+        <input type="text" name="uniqueId" value={requestDetails.uniqueId} onChange={handleInputChange} required />
+      </label>
+      <label>Item Name (separate by commas): 
+        <input type="text" name="itemName" value={requestDetails.itemName} onChange={handleInputChange} required />
+      </label>
+      <label>Request Purpose: 
+        <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
+      </label>
+      <label>Supplier Name: 
+        <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required />
+      </label>
+      <label>Quantity: 
+        <input type="number" name="quantity" value={requestDetails.quantity} onChange={handleInputChange} required />
+      </label>
+      <label>Category: 
+        <select name="category" value={requestDetails.category} onChange={handleInputChange}>
+          <option value="">Select Category</option>
+          {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+        </select>
+      </label>
+      <label>Main Category: 
+        <select name="college" value={requestDetails.college} onChange={handleInputChange}>
+          <option value="">Select Main Category</option>
+          <option value="Non Academic">Non Academic</option>
+          <option value="Academic">Academic</option>
+        </select>
+      </label>
+      {requestDetails.college === "Non Academic" && (
+        <label>Subcategory: 
+          <select name="department" value={requestDetails.department} onChange={handleInputChange}>
+            <option value="">Select Non Academic Subcategory</option>
+            {nonAcademicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
         </label>
-        <label>Main Category: 
-          <select name="college" value={requestDetails.college} onChange={handleInputChange}>
-            <option value="">Select Main Category</option>
-            <option value="Non Academic">Non Academic</option>
-            <option value="Academic">Academic</option>
-          </select>
-        </label>
-        {requestDetails.college === "Non Academic" && (
-          <label>Subcategory: 
+      )}
+      {requestDetails.college === "Academic" && (
+        <>
+          <label>College: 
             <select name="department" value={requestDetails.department} onChange={handleInputChange}>
-              <option value="">Select Non Academic Subcategory</option>
-              {nonAcademicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              <option value="">Select Academic College</option>
+              {academicColleges.map ((college) => (
+                <option key={college} value={college}>{college}</option>
+              ))}
             </select>
           </label>
-        )}
-        {requestDetails.college === "Academic" && (
-          <>
-            <label>College: 
-              <select name="department" value={requestDetails.department} onChange={handleInputChange}>
-                <option value="">Select Academic College</option>
-                {academicColleges.map((college) => <option key={college} value={college}>{college}</option>)}
+          {requestDetails.department && academicPrograms[requestDetails.department] && academicPrograms[requestDetails.department].length > 0 && (
+            <label>Academic Program: 
+              <select name="program" value={requestDetails.program} onChange={handleInputChange}>
+                <option value="">Select Academic Program</option>
+                {academicPrograms[requestDetails.department].map((program) => (
+                  <option key={program} value={program}>{program}</option>
+                ))}
               </select>
             </label>
-            {requestDetails.department && academicPrograms[requestDetails.department]?.length > 0 && (
-              <label>Academic Program: 
-                <select name="program" value={requestDetails.program} onChange={handleInputChange}>
-                  <option value="">Select Academic Program</option>
-                  {academicPrograms[requestDetails.department].map((program) => (
-                    <option key={program} value={program}>{program}</option>
-                  ))}
-                </select>
-              </label>
-            )}
+          )}
+        </>
+      )}
+      <label>Request Date: 
+        <input type="date" name="requestDate" value={requestDetails.requestDate} onChange={handleInputChange} required />
+      </label>
+      <label>Specific Type: 
+        {requestDetails.category && (
+          <input 
+            type="text" 
+            name="specificType" 
+            value={requestDetails.specificType} 
+            onChange={handleInputChange} 
+            placeholder={`Enter specific type for ${requestDetails.category}`} 
+          />
+        )}
+      </label>
+      <div className="image-upload-section">
+        <h3>Upload Image</h3>
+        <input type="file" accept="image/*" onChange={handleImageUpload} />
+      </div>
+      <div className="camera-section">
+        <h3>Capture Image</h3>
+        <button type="button" onClick={startCamera} disabled={cameraActive}>
+          Open Camera
+        </button>
+        {cameraActive && (
+          <div className="camera-preview">
+            <video ref={videoRef} autoPlay style={{ width: '100%' }} />
+            <button type="button" onClick={captureImage}>Capture</button>
+            <button type="button" onClick={stopCamera}>Cancel</button>
+            <button type="button" onClick={toggleCamera}>Switch Camera</button>
+          </div>
+        )}
+      </div>
+
+      {/* Image Preview Section */}
+      {imagePreview && (
+        <div className="image-preview">
+          <h4>Preview:</h4>
+          <img src={imagePreview} alt="Uploaded or Captured" />
+        </div>
+      )}
+      <button type="submit">{editingRequest ? 'Update Request' : 'Submit Request'}</button>
+    </form>
+
+    {/* Display Submitted Requests */}
+    <h2>Submitted Requests</h2>
+    {requests.length > 0 ? (
+      <div>
+        {viewMode === 'nonAcademic' && renderRequestsByFolder('Non Academic')}
+        {viewMode === 'academic' && renderRequestsByFolder('Academic')}
+        {viewMode === 'allFolders' && (
+          <>
+            {renderRequestsByFolder('Non Academic')}
+            {renderRequestsByFolder('Academic')}
           </>
         )}
-        <label>Request Date: <input type="date" name="requestDate" value={requestDetails.requestDate} onChange={handleInputChange} required /></label>
-        
-        <div className="image-upload-section">
-          <h3>Upload Image</h3>
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
-        </div>
-        <div className="camera-section">
-          <h3>Capture Image</h3>
-          <button type="button" onClick={startCamera} disabled={cameraActive}>
-            Open Camera
-          </button>
-          {cameraActive && (
-            <div className="camera-preview">
-              <video id="cameraVideo" autoPlay></video>
-              <button type="button" onClick={captureImage}>Capture</button>
-              <button type="button" onClick={stopCamera}>Cancel</button>
-            </div>
+      </div>
+    ) : (
+      <p>No requests submitted yet.</p>
+    )}
+
+    {/* Modal for Emailing Requestor */}
+    {isModalOpen && currentRequest && (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h2>Process Request</h2>
+          <h3>Requested Items:</h3>
+          <ul>
+            {(Array.isArray(currentRequest.itemName) ? currentRequest.itemName : currentRequest.itemName.split(',')).map(item => (
+              <li key={item.trim()} onClick={() => handleItemClick(item.trim())} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                {item.trim()}
+              </li>
+            ))}
+          </ul>
+
+          <label>
+            Action:
+            <select onChange={(e) => handleActionChange(e.target.value)} value={selectedAction}>
+              <option value="">Select Action</option>
+              <option value="Purchased">Purchased</option>
+              <option value="Out of Stock">Out of Stock</option>
+            </select>
+          </label>
+
+          {selectedAction && (
+            <form onSubmit={handleEmailSubmit}>
+              <label>
+                Items (auto-filled from selection):
+                <textarea
+                  name="items"
+                  value={selectedItems.join(', ')}
+                  onChange={handleFormDataChange}
+                  readOnly
+                />
+              </label>
+
+              {selectedAction === "Purchased" && (
+                <>
+                  <label>
+                    Date of Purchase:
+                    <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
+                  </label>
+                  <label>
+                    Requestor Email:
+                    <input
+                      type="email"
+                      name="requestorEmail"
+                      value={formData.requestorEmail}
+                      onChange={handleFormDataChange}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Requestor's Phone:
+                    <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                  </label>
+                </>
+              )}
+
+              {selectedAction === "Out of Stock" && (
+                <>
+                  <label>
+                    Requestor Email:
+                    <input type="email" name="requestorEmail" value={formData.requestorEmail} onChange={handleFormDataChange} required />
+                  </label>
+                  <label>
+                    Requestor Phone:
+                    <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                  </label>
+                </>
+              )}
+              <button type="submit">Submit</button>
+              <button type="button" onClick={closeModal}>Cancel</button>
+            </form>
           )}
         </div>
+      </div>
+    )}
+  </div>
+);
 
-        {/* Image Preview Section */}
-        {imagePreview && (
-          <div className="image-preview">
-            <h4>Preview:</h4>
-            <img src={imagePreview} alt="Uploaded or Captured" />
-          </div>
-        )}
-        <button type="submit">{editingRequest ? 'Update Request' : 'Submit Request'}</button>
-      </form>
-
-      {/* Display Submitted Requests */}
-      <h2>Submitted Requests</h2>
-      {requests.length > 0 ? (
-        <div>
-          {viewMode === 'nonAcademic' && renderRequestsByFolder('Non Academic')}
-          {viewMode === 'academic' && renderRequestsByFolder('Academic')}
-          {viewMode === 'allFolders' && (
-            <>
-              {renderRequestsByFolder('Non Academic')}
-              {renderRequestsByFolder('Academic')}
-            </>
-          )}
-        </div>
-      ) : (
-        <p>No requests submitted yet.</p>
-      )}
-
-      {/* Modal for Emailing Requestor */}
-      {isModalOpen && currentRequest && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Process Request</h2>
-            <h3>Requested Items:</h3>
-            <ul>
-              {(Array.isArray(currentRequest.itemName) ? currentRequest.itemName : currentRequest.itemName.split(',')).map(item => (
-                <li key={item.trim()} onClick={() => handleItemClick(item.trim())} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                  {item.trim()}
-                </li>
-              ))}
-            </ul>
-
-            <label>
-              Action:
-              <select onChange={(e) => handleActionChange(e.target.value)} value={selectedAction}>
-                <option value="">Select Action</option>
-                <option value="Purchased">Purchased</option>
-                <option value="Out of Stock">Out of Stock</option>
-              </select>
-            </label>
-
-            {selectedAction && (
-              <form onSubmit={handleEmailSubmit}>
-                <label>
-                  Items (auto-filled from selection):
-                  <textarea
-                    name="items"
-                    value={selectedItems.join(', ')}
-                    onChange={handleFormDataChange}
-                    readOnly
-                  />
-                </label>
-
-                {selectedAction === "Purchased" && (
-                  <>
-                    <label>
-                      Date of Purchase:
-                      <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
-                    </label>
-                    <label>
-                      Requestor Email:
-                      <input
-                        type="email"
-                        name="requestorEmail"
-                        value={formData.requestorEmail}
-                        onChange={handleFormDataChange}
-                        required
-                      />
-                    </label>
-                    <label>
-                      Requestor's Phone:
-                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-                    </label>
-                  </>
-                )}
-
-                {selectedAction === "Out of Stock" && (
-                  <>
-                    <label>
-                      Requestor Email:
-                      <input type="email" name="requestorEmail" value={formData.requestorEmail} onChange={handleFormDataChange} required />
-                    </label>
-                    <label>
-                      Requestor Phone:
-                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-                    </label>
-                  </>
-                )}
-                <button type="submit">Submit</button>
-                <button type="button" onClick={closeModal}>Cancel</button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 };
 
 export default ApproveRequest;
