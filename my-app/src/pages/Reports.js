@@ -15,6 +15,8 @@ const Reports = () => {
   const [filterYear, setFilterYear] = useState(''); // Year filter
   const [startDate, setStartDate] = useState(''); // Date range start
   const [endDate, setEndDate] = useState(''); // Date range end
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
 
   useEffect(() => {
     const fetchItems = () => {
@@ -25,6 +27,11 @@ const Reports = () => {
           ...doc.data(),
         }));
         setItems(fetchedItems);
+        setLoading(false); // Stop loading when data is fetched
+      }, (err) => {
+        console.error("Error fetching items: ", err);
+        setError("Failed to load items. Please try again.");
+        setLoading(false); // Stop loading on error
       });
 
       return () => unsubscribe();
@@ -54,9 +61,7 @@ const Reports = () => {
     });
 
     // Sort the filtered items based on the selected sorting criteria
-    filteredItems = sortItems(filteredItems);
-
-    return filteredItems;
+    return sortItems(filteredItems);
   };
 
   const sortItems = (itemsToSort) => {
@@ -224,7 +229,7 @@ const Reports = () => {
           id="yearFilter"
           placeholder="Year"
           value={filterYear}
-          onChange={(e) => setFilterYear(e.target.value)}
+ onChange={(e) => setFilterYear(e.target.value)}
         />
 
         <label htmlFor="startDate">Start Date:</label>
@@ -244,55 +249,61 @@ const Reports = () => {
         />
       </div>
 
-      {folderKeys.map((folderKey) => (
-        <div key={folderKey} className="report-section">
-          <h2 onClick={() => handleToggleFolder(folderKey)}>
-            {visibleFolders[folderKey] ? <FaFolderOpen /> : <FaFolder />} {folderKey}
-          </h2>
-          {visibleFolders[folderKey] && (
-            <div className="folder-details">
-              <button onClick={() => downloadReport(folderKey)} className="action-button">
-                Download Summary for {folderKey}
-              </button>
-              {Object.keys(groupedItems[folderKey]).map((categoryKey) => {
-                const itemsInCategory = groupedItems[folderKey][categoryKey];
-                return itemsInCategory.length > 0 ? (
-                  <div key={categoryKey}>
-                    <h3 onClick={() => handleToggleCategory(folderKey, categoryKey)}>
-                      {visibleCategories[folderKey]?.[categoryKey] ? <FaFolderOpen /> : <FaFolder />} {categoryKey} (Total Items: {itemsInCategory.length})
-                    </h3>
-                    {visibleCategories[folderKey]?.[categoryKey] && (
-                      <div className="category-details">
-                        <button
-                          onClick={() => downloadReport(folderKey, categoryKey)}
-                          className="action-button"
-                        >
-                          Download Summary for {categoryKey}
-                        </button>
-                        <ul>
-                          {itemsInCategory.map((item) => (
-                            <li key={item.id}>
-                              <div><strong>Item Name:</strong> {item.text}</div>
-                              <div><strong>Sub-category:</strong> {item.subCategory || 'N/A'}</div>
-                              <div><strong>Program:</strong> {item.program || 'N/A'}</div>
-                              <div><strong>Quantity:</strong> {item.quantity}</div>
-                              <div><strong>Amount:</strong> ₱{Number(item.amount).toFixed(2)}</div> {/* Display amount in PHP format */}
-                              <div><strong>Requested Date:</strong> {new Date(item.requestedDate.seconds * 1000).toLocaleDateString()}</div>
-                              <div><strong>Supplier:</strong> {item.supplier || 'N/A'}</div>
-                              <div><strong>Type:</strong> {item.itemType || 'N/A'}</div>
-                              {item.image && <img src={item.image} alt="Item" className="report-image" />}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : null;
-              })}
-            </div>
-          )}
-        </div>
-      ))}
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : (
+        folderKeys.map((folderKey) => (
+          <div key={folderKey} className="report-section">
+            <h2 onClick={() => handleToggleFolder(folderKey)}>
+              {visibleFolders[folderKey] ? <FaFolderOpen /> : <FaFolder />} {folderKey}
+            </h2>
+            {visibleFolders[folderKey] && (
+              <div className="folder-details">
+                <button onClick={() => downloadReport(folderKey)} className="action-button">
+                  Download Summary for {folderKey}
+                </button>
+                {Object.keys(groupedItems[folderKey]).map((categoryKey) => {
+                  const itemsInCategory = groupedItems[folderKey][categoryKey];
+                  return itemsInCategory.length > 0 ? (
+                    <div key={categoryKey}>
+                      <h3 onClick={() => handleToggleCategory(folderKey, categoryKey)}>
+                        {visibleCategories[folderKey]?.[categoryKey] ? <FaFolderOpen /> : <FaFolder />} {categoryKey} (Total Items: {itemsInCategory.length})
+                      </h3>
+                      {visibleCategories[folderKey]?.[categoryKey] && (
+                        <div className="category-details">
+                          <button
+                            onClick={() => downloadReport(folderKey, categoryKey)}
+                            className="action-button"
+                          >
+                            Download Summary for {categoryKey}
+                          </button>
+                          <ul>
+                            {itemsInCategory.map((item) => (
+                              <li key={item.id}>
+                                <div><strong>Item Name:</strong> {item.text}</div>
+                                <div><strong>Sub-category:</strong> {item.subCategory || 'N/A'}</div>
+                                <div><strong>Program:</strong> {item.program || 'N/A'}</div>
+                                <div><strong>Quantity:</strong> {item.quantity}</div>
+                                <div><strong>Amount:</strong> ₱{Number(item.amount).toFixed(2)}</div>
+                                <div><strong>Requested Date:</strong> {new Date(item.requestedDate.seconds * 1000).toLocaleDateString()}</div>
+                                <div><strong>Supplier:</strong> {item.supplier || 'N/A'}</div>
+                                <div><strong>Type:</strong> {item.itemType || 'N/A'}</div>
+                                {item.image && <img src={item.image} alt="Item" className="report-image" />}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            )}
+          </div>
+        ))
+      )}
     </div>
   );
 };
