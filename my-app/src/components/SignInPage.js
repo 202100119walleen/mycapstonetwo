@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider, facebookProvider } from '../firebase/firebase-config';
+import { auth, googleProvider } from '../firebase/firebase-config'; // Removed facebookProvider
 import { useNavigate } from 'react-router-dom';
 import './SignInPage.css'; // Ensure you have the CSS file for styling
 
@@ -23,15 +23,6 @@ const SignInPage = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate('/dashboard');
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    try {
-      await signInWithPopup(auth, facebookProvider);
       navigate('/dashboard');
     } catch (error) {
       setError(error.message);
@@ -78,16 +69,13 @@ const SignInPage = () => {
           <div className="or-container">
             <span>or</span>
           </div>
-            <div className="other-login-options">
-              <button type="button" className="google-signin" onClick={handleGoogleSignIn}>
-                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" />
-                Sign in with Google
-              </button>
-              <button type="button" className="facebook-signin" onClick={handleFacebookSignIn}>
-                <img src="https://www.facebook.com/images/fb_icon_325x325.png" alt="Facebook Logo" />
-                Sign in with Facebook
-              </button>
-            </div>
+          <div className="other-login-options">
+            <button type="button" className="google-signin" onClick={handleGoogleSignIn}>
+              <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" />
+              Sign in with Google
+            </button>
+            {/* Removed Facebook sign-in button */}
+          </div>
           <div className="new-account">
             <span>New here? </span><a href="/create-account" className="create-account">Create an account</a>
           </div>
