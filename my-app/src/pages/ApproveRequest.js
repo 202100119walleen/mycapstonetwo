@@ -236,11 +236,11 @@ const ApproveRequest = () => {
                             }
                           </ul>
                           {request.imageUrl && (
-                            <div className="image-preview">
-                              <h4>Uploaded Image:</h4>
-                              <img src={request.imageUrl} alt="Uploaded" />
-                            </div>
-                          )}
+  <div className="image-preview">
+    <h4>Uploaded Image:</h4>
+    <img src={request.imageUrl} alt="Uploaded" />
+  </div>
+)}
                           <button onClick={() => deleteRequest(request.id)}>Delete</button>
                           {!request.approved && (
                             <>

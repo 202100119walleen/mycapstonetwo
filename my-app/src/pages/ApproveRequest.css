@@ -162,7 +162,12 @@ input[type="number "] {
   height: auto; /* Maintain aspect ratio */
   margin: 10px 0; /* Add margin for spacing */
 }
-
+.image-preview img {
+  max-width: 30%; /* Set a smaller max width for the image */
+  height: auto; /* Maintain aspect ratio */
+  border-radius: 4px; /* Optional: Rounded corners for the image */
+  max-height: 200px; /* Optional: Set a maximum height to further control size */
+}
 /* Media Query for Responsiveness */
 @media (max-width: 768px) {
   .approve-request {

@@ -1,214 +1,268 @@
-
-
 .signin-container {
-    display: flex;
-    height: 100vh;
-    flex-direction: row;
+  display: flex;
+  height: 100vh;
+  flex-direction: row;
+}
+
+.signin-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #660809, #CC1012);
+  color: white;
+  padding: 20px;
+}
+
+.logo-container {
+  text-align: center;
+}
+
+.logo {
+  width: 250px;
+  margin-bottom: 20px;
+}
+
+.system-name {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Right side styling */
+.signin-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 10px;
+  background-color: white;
+  align-items: center;
+}
+
+h2 {
+  margin-bottom: 20px; /* Spacing between heading and form */
+  font-size: 32px;
+  color: #333;
+  text-align: center;
+}
+
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%; /* Make form take full width of its container */
+  max-width: 300px; /* Optional: Adjust to fit design */
+}
+
+.form-group {
+  margin-bottom: 1px;
+}
+
+input[type="email"],
+input[type="password"] {
+  width: 100%; /* Full width for form fields */
+  padding: 8px;
+  margin-top: 5px;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  outline: none;
+  box-sizing: border-box;
+  background-color: transparent;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-bottom: 2px solid #660809;
+}
+
+button.login-button {
+  width: 250px; /* Full width for button */
+  padding: 10px;
+  background-color: #660809;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+button.login-button:hover {
+  background-color: #cc1012;
+}
+
+.or-container {
+  margin: 10px auto; /* Center horizontally */
+  text-align: center;
+  width: fit-content; /* Adjust width to fit content */
+}
+
+.or-container span {
+  font-size: 18px;
+  font-weight: bold;
+  color: #272727;
+}
+
+.other-login-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px; /* Adds spacing between the buttons */
+  margin-top: 20px;
+}
+
+.other-login-options button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Adds spacing between the image and text */
+  padding: 10px 20px;
+  width: 100%;
+  max-width: 300px; /* Ensures a consistent width for both buttons */
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.google-signin,
+.facebook-signin {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-signin {
+  background-color: #fff;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.google-signin:hover {
+  background-color: #f5f5f5;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.facebook-signin {
+  background-color: #1877f2;
+  color: #fff;
+  border: none;
+}
+
+.facebook-signin:hover {
+  background-color: #155ec6;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.google-signin img,
+.facebook-signin img {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.other-login-options img {
+  width: 24px; /* Ensures a consistent size for the logos */
+  height: 24px;
+}
+
+.form-actions {
+  text-align: center;
+  margin-top: 10px; /* Adjust to place the link below the password field */
+}
+
+.forgot-password {
+  color: #424242;
+  text-decoration: none;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.new-account {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.create-account {
+  color: #424242;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.create-account:hover {
+  text-decoration: underline;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .signin-container {
+      flex-direction: column; /* Stack the left and right sections */
+      height: auto; /* Allow height to adjust based on content */
   }
-  
-  
-  .signin-left {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(to bottom, #660809, #CC1012);
-    color: white;
-    padding: 20px;
+
+  .signin-left, .signin-right {
+      flex: none; /* Remove flex-grow */
+      width: 100%; /* Full width for both sections */
+      padding: 10px; /* Adjust padding for smaller screens */
   }
-  
-  .logo-container {
-    text-align: center;
-  }
-  
+
   .logo {
-    width: 250px;
-    margin-bottom: 20px;
+      width: 200px; /* Adjust logo size */
   }
-  
-  .system-name {
-    font-size: 24px;
-    font-weight: bold;
-  }
-  
-  /* Right side styling */
-  .signin-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0 10px;
-    background-color: white;
-    align-items: center;
-  }
-  
+
   h2 {
-    margin-bottom: 20px; /* Spacing between heading and form */
-    font-size: 32px;
-    color: #333;
-    text-align: center;
+      font-size: 28px; /* Smaller heading size */
   }
-  
+
   .signin-form {
-    display: flex;
-    flex-direction: column;
-    width: 100%; /* Make form take full width of its container */
-    max-width: 300px; /* Optional: Adjust to fit design */
+      max-width: 90%; /* Allow form to take more width */
   }
-  
-  .form-group {
-    margin-bottom: 1px;
-  }
-  
-  input[type="email"],
-  input[type="password"] {
-    width: 100%; /* Full width for form fields */
-    padding: 8px;
-    margin-top: 5px;
-    border: none;
-    border-bottom: 2px solid #ccc;
-    outline: none;
-    box-sizing: border-box;
-    background-color: transparent;
-  }
-  
-  input[type="email"]:focus,
-  input[type="password"]:focus {
-    border-bottom: 2px solid #660809;
-  }
-  
+
   button.login-button {
-    width: 250px; /* Full width for button */
-    padding: 10px;
-    background-color: #660809;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    margin-top: 15px;
+      width: 100%; /* Full width for button */
   }
-  
-  button.login-button:hover {
-    background-color: #cc1012;
-  }
-  
+
   .or-container {
-    margin: 10px;
-    text-align: center;
-    margin-left:300px;
+      margin-left: 0; /* Center the or-container */
   }
-  
-  .or-container span {
-    font-size: 18px;
-    font-weight: bold;
-    color: #272727;
-    
-  }
-  
-  .other-login-options {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px; /* Adds spacing between the buttons */
-    margin-top: 20px;
-  }
-  .other-login-options button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px; /* Adds spacing between the image and text */
-    padding: 10px 20px;
-    width: 100%;
-    max-width: 300px; /* Ensures a consistent width for both buttons */
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .google-signin,
-  .facebook-signin {
-    width: 100%;
-    max-width: 300px;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .google-signin {
-    background-color: #fff;
-    color: #555;
-    border: 1px solid #ddd;
-  }
-  
-  .google-signin:hover {
-    background-color: #f5f5f5;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  .facebook-signin {
-    background-color: #1877f2;
-    color: #fff;
-    border: none;
-  }
-  
-  .facebook-signin:hover {
-    background-color: #155ec6;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .google-signin img,
-  .facebook-signin img {
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
-  }
-  .other-login-options img {
-    width: 24px; /* Ensures a consistent size for the logos */
-    height: 24px;
-  }
-  .form-actions {
-    text-align: center;
-    margin-top: 10px; /* Adjust to place the link below the password field */
-  }
-  
-  .forgot-password {
-    color: #424242;
-    text-decoration: none;
-    font-weight: bold;
-    display: block;
-    margin-bottom: 20px;
-  }
-  
-  .forgot-password:hover {
-    text-decoration: underline;
-  }
-  
+
   .new-account {
-    text-align: center;
-    margin-top: 20px;
-    margin-left: 90px  ;
+      margin-left: 0; /* Center the new account section */
   }
-  
-  .create-account {
-    color: #424242;
-    font-weight: bold;
-    text-decoration: none;
+}
+
+@media (max-width: 480px) {
+  .system-name {
+      font-size: 20px; /* Further reduce font size */
   }
-  
-  .create-account:hover {
-    text-decoration: underline;
+
+  h2 {
+      font-size: 24px; /* Further reduce heading size */
   }
-  
-  .error {
-    color: red;
-    text-align: center;
-    margin-top: 10px;
+
+  .signin-form {
+      max-width: 95%; /* Allow form to take even more width */
   }
-  
+
+  .other-login-options button {
+      max-width: 90%; /* Adjust button width */
+  }
+}
