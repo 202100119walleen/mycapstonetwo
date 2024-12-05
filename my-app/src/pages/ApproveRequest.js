@@ -69,7 +69,7 @@ const ApproveRequest = () => {
     quantity: '',
     approved: false,
     imageUrl: '',
-    specificType: '' // This will hold the specific type for any category
+    specificType: ''
   });
 
   const [requests, setRequests] = useState([]);
@@ -80,14 +80,12 @@ const ApproveRequest = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentRequest, setCurrentRequest] = useState(null);
   const [formData, setFormData] = useState({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
-  const [selectedAction, setSelectedAction] = useState('');
-  const [selectedItems, setSelectedItems] = useState([]);
   const [itemQuantities, setItemQuantities] = useState({});
   const [imagePreview, setImagePreview] = useState('');
-  const [cameraActive, setCameraActive] = useState (false);
-  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' });
+  const [cameraActive, setCameraActive] = useState(false);
+  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' }); // Fixed initialization
   const videoRef = useRef(null);
-
+  
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
     const unsubscribe = onSnapshot(requestCollection, (snapshot) => {
@@ -130,7 +128,7 @@ const ApproveRequest = () => {
     }
 
     await submitRequest();
-    resetForm(); // This will reset the form and the image upload
+    resetForm();
   };
 
   const submitRequest = async () => {
@@ -155,7 +153,7 @@ const ApproveRequest = () => {
       }
       resetForm();
     } catch (error) {
-      setErrorMessage('Error submitting request.');
+      setErrorMessage('Error submitting request: ' + error.message);
     }
   };
 
@@ -173,7 +171,7 @@ const ApproveRequest = () => {
       quantity: '',
       approved: false,
       imageUrl: '',
-      specificType: '' // Reset specific type
+      specificType: ''
     });
     setEditingRequest(null);
     setErrorMessage('');
@@ -190,7 +188,7 @@ const ApproveRequest = () => {
     try {
       await deleteDoc(doc(db, 'requests', id));
     } catch (error) {
-      setErrorMessage('Error deleting request.');
+      setErrorMessage('Error deleting request: ' + error.message);
     }
   };
 
@@ -229,7 +227,7 @@ const ApproveRequest = () => {
                       <li key={request.id}>
                         <div>
                           <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-                          <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+                          <p><strong>Supplier Name :</strong> {request.supplierName}</p>
                           <p><strong>Quantity:</strong> {request.quantity}</p>
                           <p><strong>Category:</strong> {request.category}</p>
                           <p><strong>Main Category:</strong> {request.college}</p>
@@ -294,8 +292,6 @@ const ApproveRequest = () => {
 
   const openModal = (request) => {
     setCurrentRequest(request);
-    setSelectedAction('');
-    setSelectedItems([]);
     setItemQuantities({});
     setFormData({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
     setIsModalOpen(true);
@@ -306,19 +302,6 @@ const ApproveRequest = () => {
     setCurrentRequest(null);
   };
 
-  const handleActionChange = (action) => {
-    setSelectedAction(action);
-  };
-
-  const handleItemClick = (itemName) => {
-    setSelectedItems((prevItems) => {
-      const newItems = prevItems.includes(itemName) 
-        ? prevItems.filter(i => i !== itemName) 
-        : [...prevItems, itemName];
-      return newItems;
-    });
-  };
-
   const handleQuantityChange = (itemName, value) => {
     setItemQuantities((prev) => ({
       ...prev,
@@ -326,23 +309,22 @@ const ApproveRequest = () => {
     }));
   };
 
-  const handleFormDataChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
+
     const itemsUpdated = currentRequest.itemName.map(item => {
-      if (selectedItems.includes(item.name)) {
-        return { ...item, quantity: itemQuantities[item.name] || item.quantity, status: selectedAction === "Purchased" ? '✔️' : '❌' };
-      }
-      return item;
+      const purchasedQuantity = itemQuantities[item.name] || 0;
+      const remainingQuantity = item.quantity - purchasedQuantity < 0 ? 0 : item.quantity - purchasedQuantity;
+      return { 
+        ...item, 
+        quantity: remainingQuantity, 
+        status: purchasedQuantity > 0 ? '✔️' : '❌' 
+      };
     });
 
     const requestRef = doc(db, 'requests', currentRequest.id);
     
-    const allItemsDone = itemsUpdated.every(item => item.status);
+    const allItemsDone = itemsUpdated.every(item => item.status === '✔️');
 
     try {
       await updateDoc(requestRef, {
@@ -352,8 +334,8 @@ const ApproveRequest = () => {
 
       const templateParams = {
         to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com',
-        items: itemsUpdated.map(item => `${item.name} (Quantity : ${item.quantity})`).join(', '),
-        action: selectedAction,
+        items: itemsUpdated.map(item => `${item.name} (Quantity: ${item.quantity})`).join(', '),
+        action: 'Purchased',
         purchaseDate: formData.purchaseDate,
         requestPurpose: currentRequest.requestPurpose,
         college: currentRequest.college,
@@ -365,14 +347,14 @@ const ApproveRequest = () => {
 
       closeModal();
     } catch (error) {
-      setErrorMessage('Error processing request or sending email.');
+      setErrorMessage('Error processing request or sending email: ' + error.message);
     }
   };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const storageRef = ref(storage, `images/${file.name}`);
+      const storageRef = ref(storage, ` images/${file.name}`);
       try {
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
@@ -382,7 +364,7 @@ const ApproveRequest = () => {
           imageUrl: downloadURL,
         }));
       } catch (error) {
-        console.error('Error uploading file:', error);
+        setErrorMessage('Error uploading file: ' + error.message);
       }
     }
   };
@@ -396,7 +378,7 @@ const ApproveRequest = () => {
       }
       setCameraActive(true);
     } catch (err) {
-      console.error('Camera access denied:', err);
+      setErrorMessage('Camera access denied: ' + err.message);
     }
   };
 
@@ -433,6 +415,11 @@ const ApproveRequest = () => {
       video.srcObject = null;
     }
     setCameraActive(false);
+  };
+
+  const handleFormDataChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -475,8 +462,7 @@ const ApproveRequest = () => {
         <label>Request Purpose: 
           <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
         </label>
-        <label>Supplier Name: 
-          <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required />
+        <label>Supplier Name: <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required />
         </label>
         <label>Category: 
           <select name="category" value={requestDetails.category} onChange={handleInputChange}>
@@ -499,8 +485,7 @@ const ApproveRequest = () => {
           <select name="college" value={requestDetails.college} onChange={handleInputChange}>
             <option value="">Select Main Category</option>
             <option value="Non Academic">Non Academic</option>
-            <option value="Academic">Academic</option>
-          </select>
+            <option value="Academic">Academic</option></select>
         </label>
         {requestDetails.college === "Non Academic" && (
           <label>Subcategory: 
@@ -585,80 +570,49 @@ const ApproveRequest = () => {
             <h2>Process Request</h2>
             <h3>Requested Items:</h3>
             <ul>
-              {currentRequest.itemName.map((item, index) => (
-                <li key={index} onClick={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: selectedItems.includes(item.name) ? 'underline' : 'none' }}>
-                  {item.name} (Quantity: {item.quantity})
-                  {selectedItems.includes(item.name) && (
-                    <input 
-                      type="number" 
-                      placeholder="Enter Quantity" 
-                      value={itemQuantities[item.name] || ''} 
-                      onChange={(e) => handleQuantityChange (item.name, e.target.value)} 
-                    />
-                  )}
-                </li>
-              ))}
+              {Array.isArray(currentRequest.itemName) && currentRequest.itemName.length > 0 ? (
+                currentRequest.itemName.map((item, index) => {
+                  const purchasedQuantity = itemQuantities[item.name] || 0;
+                  const remainingQuantity = item.quantity - purchasedQuantity < 0 ? 0 : item.quantity - purchasedQuantity;
+                  return (
+                    <li key={index}>
+                      {item.name} (Total Quantity: {item.quantity}, Purchased: {purchasedQuantity}, Remaining: {remainingQuantity})
+                      <input 
+                        type="number" 
+                        placeholder="Enter Quantity" 
+                        value={itemQuantities[item.name] || ''} 
+                        onChange={(e) => handleQuantityChange(item.name, e.target.value)} 
+                      />
+                    </li>
+                  );
+                })
+              ) : (
+                <li>No items available</li>
+              )}
             </ul>
 
-            <label>
-              Action:
-              <select onChange={(e) => handleActionChange(e.target.value)} value={selectedAction}>
-                <option value="">Select Action</option>
-                <option value="Purchased">Purchased</option>
-                <option value="Out of Stock">Out of Stock</option>
-              </select>
-            </label>
-
-            {selectedAction && (
-              <form onSubmit={handleEmailSubmit}>
-                <label>
-                  Items (auto-filled from selection):
-                  <textarea
-                    name="items"
-                    value={currentRequest.itemName.map(item => `${item.name} (Quantity: ${item.quantity})`).join(', ')}
-                    readOnly
-                  />
-                </label>
-
-                {selectedAction === "Purchased" && (
-                  <>
-                    <label>
-                      Date of Purchase:
-                      <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
-                    </label>
-                    <label>
-                      Requestor Email:
-                      <input
-                        type="email"
-                        name="requestorEmail"
-                        value={formData.requestorEmail}
-                        onChange={handleFormDataChange}
-                        required
-                      />
-                    </label>
-                    <label>
-                      Requestor's Phone:
-                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-                    </label>
-                  </>
-                )}
-
-                {selectedAction === "Out of Stock" && (
-                  <>
-                    <label>
-                      Requestor Email:
-                      <input type="email" name="requestorEmail" value={formData.requestorEmail} onChange={handleFormDataChange} required />
-                    </label>
-                    <label>
-                      Requestor Phone:
-                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-                    </label>
-                  </>
-                )}
-                <button type="submit">Submit</button>
-                <button type="button" onClick={closeModal}>Cancel</button>
-              </form>
-            )}
+            <form onSubmit={handleEmailSubmit}>
+              <label>
+                Date of Purchase:
+                <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
+              </ label>
+              <label>
+                Requestor Email:
+                <input
+                  type="email"
+                  name="requestorEmail"
+                  value={formData.requestorEmail}
+                  onChange={handleFormDataChange}
+                  required
+                />
+              </label>
+              <label>
+                Requestor's Phone:
+                <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+              </label>
+              <button type="submit">Submit</button>
+              <button type="button" onClick={closeModal}>Cancel</button>
+            </form>
           </div>
         </div>
       )}
