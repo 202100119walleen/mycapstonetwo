@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config'; // Adjust the import based on your project structure
 import './ManageItem.css'; // Optional: Add your styles
 
@@ -19,6 +19,14 @@ const ManageItems = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleDelete = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'approvedRequests', id));
+    } catch (error) {
+      console.error('Error deleting request:', error);
+    }
+  };
+
   return (
     <div className="manage-items">
       <h1>Purchased Items</h1>
@@ -36,6 +44,7 @@ const ManageItems = () => {
               <th>Specific Type</th>
               <th>Academic Program</th>
               <th>Items Purchased</th>
+              <th>Actions</th> {/* New column for actions */}
             </tr>
           </thead>
           <tbody>
@@ -53,11 +62,14 @@ const ManageItems = () => {
                 <td>
                   <ul>
                     {request.items.map((item, index) => (
-                      <li key={index}>
+                      <li key ={index}>
                         {item.name} - Quantity: {item.quantity}
                       </li>
                     ))}
                   </ul>
+                </td>
+                <td>
+                  <button onClick={() => handleDelete(request.id)}>Delete</button> {/* Delete button */}
                 </td>
               </tr>
             ))}

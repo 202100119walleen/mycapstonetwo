@@ -236,7 +236,7 @@ const ApproveRequest = () => {
       college === folderName && (
         <div key={college} className="college-section">
           <h3 onClick={() => toggleFolder(college)}>
-            {college} {openFolders[college] ? '[-]' : '[+]'}
+            {college} {openFolders[college] ? '[- ]' : '[+]'}
           </h3>
           {openFolders[college] && (
             <>
@@ -244,7 +244,7 @@ const ApproveRequest = () => {
                 <div key={category} className="category-section">
                   <h4>{category}</h4>
                   <ul>
- {requestsByCollege[college][category].map((request) => (
+                    { requestsByCollege[college][category] ? requestsByCollege[college][category].map((request) => (
                       <li key={request.id}>
                         <div>
                           <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
@@ -294,9 +294,14 @@ const ApproveRequest = () => {
                               }}>Edit</button>
                             </>
                           )}
+                          {request.approved && (
+                            <button onClick={() => markAsDone(request)}>Done</button>
+                          )}
                         </div>
                       </li>
-                    ))}
+                    )) : (
+                      <li>No requests found for this category.</li>
+                    )}
                   </ul>
                 </div>
               ))}
@@ -367,7 +372,7 @@ const ApproveRequest = () => {
         requestPurpose: currentRequest.requestPurpose,
         college: currentRequest.college,
         department: currentRequest.department,
-        uniqueId: currentRequest.uniqueId
+        uniqueId: currentRequest.uniqueId,
       };
 
       await emailjs.send('service_bl8cece', 'template_2914ned', templateParams, 'BMRt6JigJjznZL-FA');
@@ -391,6 +396,38 @@ const ApproveRequest = () => {
       });
     } catch (error) {
       console.error('Error saving approved items:', error);
+    }
+  };
+
+  const markAsDone = async (request) => {
+    try {
+      const requestRef = doc(db, 'requests', request.id);
+      const approvedItems = {
+        requestId: request.id,
+        items: request.items,
+        purchaseDate: new Date(), // Set the current date as the purchase date
+        requestorEmail: request.requestorEmail, // Ensure this field exists in the request
+        requestorPhone: request.requestorPhone, // Ensure this field exists in the request
+        uniqueId: request.uniqueId,
+        requestDate: request.requestDate,
+        supplierName: request.supplierName, // Ensure this field exists in the request
+        category: request.category, // Ensure this field exists in the request
+        mainCategory: request.college, // Ensure this field exists in the request
+        subcategory: request.department, // Ensure this field exists in the request
+        specificType: request.specificType, // Ensure this field exists in the request
+        academicProgram: request.program, // Ensure this field exists in the request
+        createdAt: new Date() // Optional: timestamp for when the item was approved
+      };
+  
+      // Save to approvedRequests collection
+      await addDoc(collection(db, 'approvedRequests'), approvedItems);
+  
+      // Optionally, you can also update the original request to mark it as done
+      await updateDoc(requestRef, {
+        approved: true // Mark the request as approved
+      });
+    } catch (error) {
+      setErrorMessage('Error marking request as done.');
     }
   };
 
@@ -470,7 +507,8 @@ const ApproveRequest = () => {
       </div>
       <form onSubmit={handleSubmit}>
         <label>Request Purpose: 
-          <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
+          <input type="text" name="requestPurpose" value 
+={requestDetails.requestPurpose} onChange={handleInputChange} required />
         </label>
         <label>Supplier Name: 
           <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required />
@@ -490,7 +528,7 @@ const ApproveRequest = () => {
         </label>
         {requestDetails.college === "Non Academic" && (
           <label>Subcategory: 
-            <select name="department" value={requestDetails.department } onChange={handleInputChange}>
+            <select name="department" value={requestDetails.department} onChange={handleInputChange}>
               <option value="">Select Non Academic Subcategory</option>
               {nonAcademicOptions.map((option) => (
                 <option key={option} value={option}>{option}</option>
@@ -606,12 +644,12 @@ const ApproveRequest = () => {
             <h2>Process Request</h2>
             <h3>Requested Items:</h3>
             <ul>
-  {currentRequest.items.map((item) => (
-    <li key={item.name} onClick={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-      {item.name} - Quantity: {item.quantity}
-    </li>
-  ))}
-</ul>
+              {currentRequest.items.map((item) => (
+                <li key={item.name} onClick={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                  {item.name} - Quantity: {item.quantity}
+                </li>
+              ))}
+            </ul>
             <form onSubmit={handlePurchaseSubmit}>
               <h2>Items to be Purchased</h2>
               <ul>
