@@ -3,6 +3,7 @@ import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot } from 'fireb
 import { db, storage } from '../firebase/firebase-config'; // Import storage
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import storage functions
 import emailjs from 'emailjs-com';
+import { v4 as uuidv4 } from 'uuid'; // Import UUID
 import './ApproveRequest.css';
 
 const categories = ["Equipment", "Office Supplies", "Books", "Electrical Parts"];
@@ -83,9 +84,8 @@ const ApproveRequest = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [imagePreview, setImagePreview] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
-  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' });
   const videoRef = useRef(null);
-  const [selectedItemQuantities, setSelectedItemQuantities] = useState({});
+  const [selectedItemQuantities, setSelectedItemQuantities] = useState([]);
 
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
@@ -123,7 +123,6 @@ const ApproveRequest = () => {
   const handlePurchaseSubmit = (e) => {
     e.preventDefault();
     console.log('Items marked as purchased:', selectedItems);
-    // Here you can add logic to update the database or perform other actions
   };
 
   const handleItemChange = (index, field, value) => {
@@ -147,6 +146,10 @@ const ApproveRequest = () => {
     if (isDuplicate) {
       setErrorMessage('Error: Request Number (Unique ID) must be unique.');
       return;
+    }
+
+    if (!editingRequest) {
+      requestDetails.uniqueId = uuidv4();
     }
 
     await submitRequest();
@@ -232,7 +235,7 @@ const ApproveRequest = () => {
     return Object.keys(requestsByCollege).map((college) => (
       college === folderName && (
         <div key={college} className="college-section">
-          <h3 onClick={() => toggleFolder (college)}>
+          <h3 onClick={() => toggleFolder(college)}>
             {college} {openFolders[college] ? '[-]' : '[+]'}
           </h3>
           {openFolders[college] && (
@@ -241,7 +244,7 @@ const ApproveRequest = () => {
                 <div key={category} className="category-section">
                   <h4>{category}</h4>
                   <ul>
-                    {requestsByCollege[college][category].map((request) => (
+ {requestsByCollege[college][category].map((request) => (
                       <li key={request.id}>
                         <div>
                           <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
@@ -345,14 +348,16 @@ const ApproveRequest = () => {
     });
 
     const requestRef = doc(db, 'requests', currentRequest.id);
-    
     const allItemsDone = itemsUpdated.every(item => item.quantity === 0);
     
     try {
       await updateDoc(requestRef, {
         items: itemsUpdated,
         approved: allItemsDone
- });
+      });
+
+      // Save approved items to a separate collection
+      await saveApprovedItems(currentRequest, itemsUpdated);
 
       const templateParams = {
         to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com',
@@ -370,6 +375,22 @@ const ApproveRequest = () => {
       closeModal();
     } catch (error) {
       setErrorMessage('Error processing request or sending email.');
+    }
+  };
+
+  const saveApprovedItems = async (request, itemsUpdated) => {
+    try {
+      await addDoc(collection(db, 'approvedRequests'), {
+        requestId: request.id,
+        items: itemsUpdated,
+        purchaseDate: formData.purchaseDate,
+        requestorEmail: formData.requestorEmail,
+        requestorPhone: formData.requestorPhone,
+        uniqueId: request.uniqueId,
+        createdAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error saving approved items:', error);
     }
   };
 
@@ -393,7 +414,7 @@ const ApproveRequest = () => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
@@ -405,9 +426,7 @@ const ApproveRequest = () => {
   };
 
   const toggleCamera = () => {
-    setVideoConstraints((prev) => ({
-      facingMode: prev.facingMode === 'user' ? 'environment' : 'user',
-    }));
+    setCameraActive(prev => !prev);
   };
 
   const captureImage = () => {
@@ -449,11 +468,7 @@ const ApproveRequest = () => {
           </select>
         </label>
       </div>
-
       <form onSubmit={handleSubmit}>
-        <label>Unique ID: 
-          <input type="text" name="uniqueId" value={requestDetails.uniqueId} onChange={handleInputChange} required />
-        </label>
         <label>Request Purpose: 
           <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
         </label>
@@ -475,9 +490,11 @@ const ApproveRequest = () => {
         </label>
         {requestDetails.college === "Non Academic" && (
           <label>Subcategory: 
-            <select name="department" value={requestDetails.department} onChange={handleInputChange}>
+            <select name="department" value={requestDetails.department } onChange={handleInputChange}>
               <option value="">Select Non Academic Subcategory</option>
-              {nonAcademicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              {nonAcademicOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
           </label>
         )}
@@ -485,7 +502,7 @@ const ApproveRequest = () => {
           <>
             <label>College: 
               <select name="department" value={requestDetails.department} onChange={handleInputChange}>
-                <option value=""> Select Academic College</option>
+                <option value="">Select Academic College</option>
                 {academicColleges.map((college) => (
                   <option key={college} value={college}>{college}</option>
                 ))}
@@ -589,12 +606,12 @@ const ApproveRequest = () => {
             <h2>Process Request</h2>
             <h3>Requested Items:</h3>
             <ul>
-              {currentRequest.items.map((item) => (
-                <li key={item.name} onClick ={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                  {item.name} - Quantity: {item.quantity}
-                </li>
-              ))}
-            </ul>
+  {currentRequest.items.map((item) => (
+    <li key={item.name} onClick={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+      {item.name} - Quantity: {item.quantity}
+    </li>
+  ))}
+</ul>
             <form onSubmit={handlePurchaseSubmit}>
               <h2>Items to be Purchased</h2>
               <ul>
