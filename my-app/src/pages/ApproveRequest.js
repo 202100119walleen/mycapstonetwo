@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { db, storage } from '../firebase/firebase-config'; // Import storage
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import storage functions
+import { db, storage } from '../firebase/firebase-config'; 
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import emailjs from 'emailjs-com';
-import { v4 as uuidv4 } from 'uuid'; // Import UUID
 import './ApproveRequest.css';
 
 const categories = ["Equipment", "Office Supplies", "Books", "Electrical Parts"];
@@ -58,7 +57,7 @@ const academicPrograms = {
 
 const ApproveRequest = () => {
   const [requestDetails, setRequestDetails] = useState({
-    items: [],
+    itemName: [],
     category: '',
     uniqueId: '',
     college: '',
@@ -67,9 +66,10 @@ const ApproveRequest = () => {
     requestDate: '',
     requestPurpose: '',
     supplierName: '',
+    quantity: '',
     approved: false,
     imageUrl: '',
-    specificType: ''
+    specificType: '' // This will hold the specific type for any category
   });
 
   const [requests, setRequests] = useState([]);
@@ -82,10 +82,11 @@ const ApproveRequest = () => {
   const [formData, setFormData] = useState({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
+  const [itemQuantities, setItemQuantities] = useState({});
   const [imagePreview, setImagePreview] = useState('');
-  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraActive, setCameraActive] = useState (false);
+  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' });
   const videoRef = useRef(null);
-  const [selectedItemQuantities, setSelectedItemQuantities] = useState([]);
 
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
@@ -105,36 +106,16 @@ const ApproveRequest = () => {
     setErrorMessage('');
   };
 
-  const handleItemSelection = (e, itemName) => {
-    if (e.target.checked) {
-      setSelectedItems((prev) => [...prev, itemName]);
-    } else {
-      setSelectedItems((prev) => prev.filter((name) => name !== itemName));
-    }
-  };
-
-  const handleItemQuantityChange = (itemName, quantity) => {
-    setSelectedItemQuantities((prev) => ({
-      ...prev,
-      [itemName]: quantity,
-    }));
-  };
-
-  const handlePurchaseSubmit = (e) => {
-    e.preventDefault();
-    console.log('Items marked as purchased:', selectedItems);
-  };
-
   const handleItemChange = (index, field, value) => {
-    const updatedItems = [...requestDetails.items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    setRequestDetails((prev) => ({ ...prev, items: updatedItems }));
+    const newItemNames = [...requestDetails.itemName];
+    newItemNames[index] = { ...newItemNames[index], [field]: value };
+    setRequestDetails((prev) => ({ ...prev, itemName: newItemNames }));
   };
 
-  const handleAddItem = () => {
+  const addItem = () => {
     setRequestDetails((prev) => ({
       ...prev,
-      items: [...prev.items, { name: '', quantity: '' }],
+      itemName: [...prev.itemName, { name: '', quantity: '' }]
     }));
   };
 
@@ -148,26 +129,25 @@ const ApproveRequest = () => {
       return;
     }
 
-    if (!editingRequest) {
-      requestDetails.uniqueId = uuidv4();
-    }
-
     await submitRequest();
-    resetForm();
+    resetForm(); // This will reset the form and the image upload
   };
 
   const submitRequest = async () => {
     try {
+      const generatedUniqueId = `REQ-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       if (editingRequest) {
         const requestRef = doc(db, 'requests', editingRequest.id);
         await updateDoc(requestRef, {
           ...requestDetails,
+          uniqueId: editingRequest.uniqueId,
           requestDate: new Date(requestDetails.requestDate).getTime(),
         });
         setEditingRequest(null);
       } else {
         await addDoc(collection(db, 'requests'), {
           ...requestDetails,
+          uniqueId: generatedUniqueId,
           requestDate: new Date(requestDetails.requestDate).getTime(),
           requestorEmail: formData.requestorEmail,
           approved: false,
@@ -181,7 +161,7 @@ const ApproveRequest = () => {
 
   const resetForm = () => {
     setRequestDetails({
-      items: [],
+      itemName: [],
       category: '',
       uniqueId: '',
       college: '',
@@ -190,14 +170,15 @@ const ApproveRequest = () => {
       requestDate: '',
       requestPurpose: '',
       supplierName: '',
+      quantity: '',
       approved: false,
       imageUrl: '',
-      specificType: ''
+      specificType: '' // Reset specific type
     });
     setEditingRequest(null);
     setErrorMessage('');
     setImagePreview('');
-    setSelectedItemQuantities({});
+    setItemQuantities({});
 
     const imageInput = document.getElementById('imageInput');
     if (imageInput) {
@@ -236,7 +217,7 @@ const ApproveRequest = () => {
       college === folderName && (
         <div key={college} className="college-section">
           <h3 onClick={() => toggleFolder(college)}>
-            {college} {openFolders[college] ? '[- ]' : '[+]'}
+            {college} {openFolders[college] ? '[-]' : '[+]'}
           </h3>
           {openFolders[college] && (
             <>
@@ -244,21 +225,12 @@ const ApproveRequest = () => {
                 <div key={category} className="category-section">
                   <h4>{category}</h4>
                   <ul>
-                    { requestsByCollege[college][category] ? requestsByCollege[college][category].map((request) => (
+                    {requestsByCollege[college][category].map((request) => (
                       <li key={request.id}>
                         <div>
                           <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
                           <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-                          <p><strong>Items:</strong></p>
-                          <ul>
-                            {Array.isArray(request.items) ? request.items.map((item, index) => (
-                              <li key={index}>
-                                {item.name} - Quantity: {item.quantity} {request.approved ? '✔️' : ''}
-                              </li>
-                            )) : (
-                              <li>No items found</li>
-                            )}
-                          </ul>
+                          <p><strong>Quantity:</strong> {request.quantity}</p>
                           <p><strong>Category:</strong> {request.category}</p>
                           <p><strong>Main Category:</strong> {request.college}</p>
                           <p><strong>Subcategory:</strong> {request.department}</p>
@@ -266,6 +238,18 @@ const ApproveRequest = () => {
                           <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
                           <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
                           <p><strong>Unique ID:</strong> {request.uniqueId}</p>
+                          <strong>Requested Items:</strong>
+                          <ul>
+                            {Array.isArray(request.itemName) && request.itemName.length > 0 ? (
+                              request.itemName.map((item, index) => (
+                                <li key={index}>
+                                  {item.name} (Quantity: {item.quantity}) {request.approved ? '✔️' : '❌'}
+                                </li>
+                              ))
+                            ) : (
+                              <li>No items available</li>
+                            )}
+                          </ul>
                           {request.imageUrl && (
                             <div className="image-preview">
                               <h4>Uploaded Image:</h4>
@@ -275,11 +259,11 @@ const ApproveRequest = () => {
                           <button onClick={() => deleteRequest(request.id)}>Delete</button>
                           {!request.approved && (
                             <>
-                              <button onClick={() => openModal(request)}>Purchased</button>
+                              <button onClick={() => openModal(request)}>More</button>
                               <button onClick={() => {
                                 setEditingRequest(request);
                                 setRequestDetails({
-                                  items: request.items,
+                                  itemName: request.itemName,
                                   category: request.category,
                                   uniqueId: request.uniqueId,
                                   college: request.college,
@@ -288,20 +272,16 @@ const ApproveRequest = () => {
                                   requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
                                   requestPurpose: request.requestPurpose,
                                   supplierName: request.supplierName,
+                                  quantity: request.quantity,
                                   imageUrl: request.imageUrl,
                                   specificType: request.specificType
                                 });
                               }}>Edit</button>
                             </>
                           )}
-                          {request.approved && (
-                            <button onClick={() => markAsDone(request)}>Done</button>
-                          )}
                         </div>
                       </li>
-                    )) : (
-                      <li>No requests found for this category.</li>
-                    )}
+                    ))}
                   </ul>
                 </div>
               ))}
@@ -314,8 +294,9 @@ const ApproveRequest = () => {
 
   const openModal = (request) => {
     setCurrentRequest(request);
-    setSelectedAction('Purchased');
+    setSelectedAction('');
     setSelectedItems([]);
+    setItemQuantities({});
     setFormData({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
     setIsModalOpen(true);
   };
@@ -325,11 +306,24 @@ const ApproveRequest = () => {
     setCurrentRequest(null);
   };
 
-  const handleItemClick = (item) => {
+  const handleActionChange = (action) => {
+    setSelectedAction(action);
+  };
+
+  const handleItemClick = (itemName) => {
     setSelectedItems((prevItems) => {
-      const newItems = prevItems.includes(item) ? prevItems.filter(i => i !== item) : [...prevItems, item];
+      const newItems = prevItems.includes(itemName) 
+        ? prevItems.filter(i => i !== itemName) 
+        : [...prevItems, itemName];
       return newItems;
     });
+  };
+
+  const handleQuantityChange = (itemName, value) => {
+    setItemQuantities((prev) => ({
+      ...prev,
+      [itemName]: value
+    }));
   };
 
   const handleFormDataChange = (e) => {
@@ -339,40 +333,32 @@ const ApproveRequest = () => {
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    const itemsUpdated = currentRequest.items.map((item) => {
+    const itemsUpdated = currentRequest.itemName.map(item => {
       if (selectedItems.includes(item.name)) {
-        const quantityPurchased = selectedItemQuantities[item.name] || 0;
-        const remainingQuantity = item.quantity - quantityPurchased;
-        if (remainingQuantity <= 0) {
-          return { ...item, name: `${item.name} ✔️`, quantity: 0 }; // Mark as purchased
-        } else {
-          return { ...item, name: `${item.name} (Remaining: ${remainingQuantity})`, quantity: remainingQuantity }; // Update remaining quantity
-        }
+        return { ...item, quantity: itemQuantities[item.name] || item.quantity, status: selectedAction === "Purchased" ? '✔️' : '❌' };
       }
       return item;
     });
 
     const requestRef = doc(db, 'requests', currentRequest.id);
-    const allItemsDone = itemsUpdated.every(item => item.quantity === 0);
     
+    const allItemsDone = itemsUpdated.every(item => item.status);
+
     try {
       await updateDoc(requestRef, {
-        items: itemsUpdated,
+        itemName: itemsUpdated,
         approved: allItemsDone
       });
 
-      // Save approved items to a separate collection
-      await saveApprovedItems(currentRequest, itemsUpdated);
-
       const templateParams = {
         to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com',
-        items: itemsUpdated.map(item => `${item.name} (Quantity: ${item.quantity})`).join(', '),
+        items: itemsUpdated.map(item => `${item.name} (Quantity : ${item.quantity})`).join(', '),
         action: selectedAction,
         purchaseDate: formData.purchaseDate,
         requestPurpose: currentRequest.requestPurpose,
         college: currentRequest.college,
         department: currentRequest.department,
-        uniqueId: currentRequest.uniqueId,
+        uniqueId: currentRequest.uniqueId
       };
 
       await emailjs.send('service_bl8cece', 'template_2914ned', templateParams, 'BMRt6JigJjznZL-FA');
@@ -380,54 +366,6 @@ const ApproveRequest = () => {
       closeModal();
     } catch (error) {
       setErrorMessage('Error processing request or sending email.');
-    }
-  };
-
-  const saveApprovedItems = async (request, itemsUpdated) => {
-    try {
-      await addDoc(collection(db, 'approvedRequests'), {
-        requestId: request.id,
-        items: itemsUpdated,
-        purchaseDate: formData.purchaseDate,
-        requestorEmail: formData.requestorEmail,
-        requestorPhone: formData.requestorPhone,
-        uniqueId: request.uniqueId,
-        createdAt: new Date()
-      });
-    } catch (error) {
-      console.error('Error saving approved items:', error);
-    }
-  };
-
-  const markAsDone = async (request) => {
-    try {
-      const requestRef = doc(db, 'requests', request.id);
-      const approvedItems = {
-        requestId: request.id,
-        items: request.items,
-        purchaseDate: new Date(), // Set the current date as the purchase date
-        requestorEmail: request.requestorEmail, // Ensure this field exists in the request
-        requestorPhone: request.requestorPhone, // Ensure this field exists in the request
-        uniqueId: request.uniqueId,
-        requestDate: request.requestDate,
-        supplierName: request.supplierName, // Ensure this field exists in the request
-        category: request.category, // Ensure this field exists in the request
-        mainCategory: request.college, // Ensure this field exists in the request
-        subcategory: request.department, // Ensure this field exists in the request
-        specificType: request.specificType, // Ensure this field exists in the request
-        academicProgram: request.program, // Ensure this field exists in the request
-        createdAt: new Date() // Optional: timestamp for when the item was approved
-      };
-  
-      // Save to approvedRequests collection
-      await addDoc(collection(db, 'approvedRequests'), approvedItems);
-  
-      // Optionally, you can also update the original request to mark it as done
-      await updateDoc(requestRef, {
-        approved: true // Mark the request as approved
-      });
-    } catch (error) {
-      setErrorMessage('Error marking request as done.');
     }
   };
 
@@ -451,7 +389,7 @@ const ApproveRequest = () => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
@@ -463,21 +401,27 @@ const ApproveRequest = () => {
   };
 
   const toggleCamera = () => {
-    setCameraActive(prev => !prev);
+    setVideoConstraints((prev) => ({
+      facingMode: prev.facingMode === 'user' ? 'environment' : 'user',
+    }));
   };
 
   const captureImage = () => {
     const canvas = document.createElement('canvas');
     const video = videoRef.current;
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+
     canvas.getContext('2d').drawImage(video, 0, 0);
     const imageData = canvas.toDataURL('image/png');
+
     setImagePreview(imageData);
     setRequestDetails((prev) => ({
       ...prev,
       imageUrl: imageData,
     }));
+
     stopCamera();
   };
 
@@ -500,15 +444,36 @@ const ApproveRequest = () => {
           View Mode: 
           <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
             <option value="allFolders">All Folders</option>
-            <option value="nonAcademic">Non Academic Folder</option>
+            <option value="nonAcademic"> Non Academic Folder</option>
             <option value="academic">Academic Folder</option>
           </select>
         </label>
       </div>
+
       <form onSubmit={handleSubmit}>
+        <label>Item Name (separate by commas): 
+          <button type="button" onClick={addItem}>Add Item</button>
+        </label>
+        {requestDetails.itemName.map((item, index) => (
+          <div key={index}>
+            <input 
+              type="text" 
+              placeholder="Item Name" 
+              value={item.name} 
+              onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
+              required 
+            />
+            <input 
+              type="number" 
+              placeholder="Quantity" 
+              value={item.quantity} 
+              onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} 
+              required 
+            />
+          </div>
+        ))}
         <label>Request Purpose: 
-          <input type="text" name="requestPurpose" value 
-={requestDetails.requestPurpose} onChange={handleInputChange} required />
+          <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
         </label>
         <label>Supplier Name: 
           <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required />
@@ -519,6 +484,17 @@ const ApproveRequest = () => {
             {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </label>
+        {requestDetails.category && (
+          <label>
+            Specific Type: <input 
+              type="text" 
+              name="specificType" 
+              value={requestDetails.specificType} 
+              onChange={handleInputChange} 
+              placeholder="Specify type for selected category" 
+            />
+          </label>
+        )}
         <label>Main Category: 
           <select name="college" value={requestDetails.college} onChange={handleInputChange}>
             <option value="">Select Main Category</option>
@@ -530,9 +506,7 @@ const ApproveRequest = () => {
           <label>Subcategory: 
             <select name="department" value={requestDetails.department} onChange={handleInputChange}>
               <option value="">Select Non Academic Subcategory</option>
-              {nonAcademicOptions.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {nonAcademicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
         )}
@@ -561,39 +535,6 @@ const ApproveRequest = () => {
         <label>Request Date: 
           <input type="date" name="requestDate" value={requestDetails.requestDate} onChange={handleInputChange} required />
         </label>
-        <label>Specific Type: 
-          {requestDetails.category && (
-            <input 
-              type="text" 
-              name="specificType" 
-              value={requestDetails.specificType} 
-              onChange={handleInputChange} 
-              placeholder={`Enter specific type for ${requestDetails.category}`} 
-            />
-          )}
-        </label>
-        <div className="items-section">
-          <h3>Items</h3>
-          {requestDetails.items.map((item, index) => (
-            <div key={index} className="item-input">
-              <input 
-                type="text" 
-                placeholder="Item Name" 
-                value={item.name} 
-                onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
-                required 
-              />
-              <input 
-                type="number" 
-                placeholder="Quantity" 
-                value={item.quantity} 
-                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} 
-                required 
-              />
-            </div>
-          ))}
-          <button type="button" onClick={handleAddItem}>Add Item</button>
-        </div>
         <div className="image-upload-section">
           <h3>Upload Image</h3>
           <input type="file" accept="image/*" onChange={handleImageUpload} />
@@ -644,56 +585,80 @@ const ApproveRequest = () => {
             <h2>Process Request</h2>
             <h3>Requested Items:</h3>
             <ul>
-              {currentRequest.items.map((item) => (
-                <li key={item.name} onClick={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                  {item.name} - Quantity: {item.quantity}
+              {currentRequest.itemName.map((item, index) => (
+                <li key={index} onClick={() => handleItemClick(item.name)} style={{ cursor: 'pointer', textDecoration: selectedItems.includes(item.name) ? 'underline' : 'none' }}>
+                  {item.name} (Quantity: {item.quantity})
+                  {selectedItems.includes(item.name) && (
+                    <input 
+                      type="number" 
+                      placeholder="Enter Quantity" 
+                      value={itemQuantities[item.name] || ''} 
+                      onChange={(e) => handleQuantityChange (item.name, e.target.value)} 
+                    />
+                  )}
                 </li>
               ))}
             </ul>
-            <form onSubmit={handlePurchaseSubmit}>
-              <h2>Items to be Purchased</h2>
-              <ul>
-                {currentRequest.items.map((item) => (
-                  <li key={item.name}>
+
+            <label>
+              Action:
+              <select onChange={(e) => handleActionChange(e.target.value)} value={selectedAction}>
+                <option value="">Select Action</option>
+                <option value="Purchased">Purchased</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </label>
+
+            {selectedAction && (
+              <form onSubmit={handleEmailSubmit}>
+                <label>
+                  Items (auto-filled from selection):
+                  <textarea
+                    name="items"
+                    value={currentRequest.itemName.map(item => `${item.name} (Quantity: ${item.quantity})`).join(', ')}
+                    readOnly
+                  />
+                </label>
+
+                {selectedAction === "Purchased" && (
+                  <>
                     <label>
+                      Date of Purchase:
+                      <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
+                    </label>
+                    <label>
+                      Requestor Email:
                       <input
-                        type="checkbox"
-                        value={item.name}
-                        onChange={(e) => handleItemSelection(e, item.name)}
-                      />
-                      {item.name} - Quantity: 
-                      <input 
-                        type="number" 
-                        value={selectedItemQuantities[item.name] || ''} 
-                        onChange={(e) => handleItemQuantityChange(item.name, e.target.value)} 
+                        type="email"
+                        name="requestorEmail"
+                        value={formData.requestorEmail}
+                        onChange={handleFormDataChange}
+                        required
                       />
                     </label>
-                  </li>
-                ))}
-              </ul>
-              <button type="submit">Mark as Purchased</button>
-            </form>
-            <form onSubmit={handleEmailSubmit}>
-              <label>
-                Date of Purchase:
-                <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
-              </label>
-              <label>
-                Requestor Email:
-                <input
-                  type="email"
-                  name="requestorEmail"
-                  value={formData.requestorEmail}
-                  onChange={handleFormDataChange}
-                  required
-                />
-              </label>
-              <label>
-                Requestor's Phone:
-                <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
-              </label>
-              <button type="submit">Submit</button>
-            </form>
+                    <label>
+                      Requestor's Phone:
+                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                    </label>
+                  </>
+                )}
+
+                {selectedAction === "Out of Stock" && (
+                  <>
+                    <label>
+                      Requestor Email:
+                      <input type="email" name="requestorEmail" value={formData.requestorEmail} onChange={handleFormDataChange} required />
+                    </label>
+                    <label>
+                      Requestor Phone:
+                      <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                    </label>
+                  </>
+                )}
+                <button type="submit">Submit</button>
+                <button type="button" onClick={closeModal}>Cancel</button>
+              </form>
+            )}
           </div>
         </div>
       )}
