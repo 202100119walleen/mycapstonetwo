@@ -51,3 +51,11 @@ th {
     padding-left: 50%; /* Add padding for labels */
   }
 }
+.search-barmanage {
+  width: 200px; /* Adjust the width as needed */
+  padding: 8px; /* Add some padding for better appearance */
+  border: 1px solid #ccc; /* Add a border */
+  border-radius: 4px; /* Rounded corners */
+  font-size: 14px; /* Font size */
+  margin-bottom: 20px; /* Space below the search bar */
+}
