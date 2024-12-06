@@ -3,6 +3,7 @@ import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot } from 'fireb
 import { db, storage } from '../firebase/firebase-config'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import emailjs from 'emailjs-com';
+
 import './ApproveRequest.css';
 
 const categories = ["Equipment", "Office Supplies", "Books", "Electrical Parts"];
@@ -56,6 +57,7 @@ const academicPrograms = {
 };
 
 const ApproveRequest = () => {
+  
   const [requestDetails, setRequestDetails] = useState({
     itemName: [],
     category: '',
@@ -83,7 +85,7 @@ const ApproveRequest = () => {
   const [itemQuantities, setItemQuantities] = useState({});
   const [imagePreview, setImagePreview] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
-  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' }); // Fixed initialization
+  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' });
   const videoRef = useRef(null);
   
   useEffect(() => {
@@ -113,7 +115,7 @@ const ApproveRequest = () => {
   const addItem = () => {
     setRequestDetails((prev) => ({
       ...prev,
-      itemName: [...prev.itemName, { name: '', quantity: '' }]
+      itemName: [...prev.itemName, { name: '', quantity: '', purchasedQuantity: 0 }]
     }));
   };
 
@@ -219,67 +221,78 @@ const ApproveRequest = () => {
           </h3>
           {openFolders[college] && (
             <>
-              {Object.keys(requestsByCollege[college]).map((category) => (
+ {Object.keys(requestsByCollege[college]).map((category) => (
                 <div key={category} className="category-section">
                   <h4>{category}</h4>
                   <ul>
-                    {requestsByCollege[college][category].map((request) => (
-                      <li key={request.id}>
-                        <div>
-                          <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-                          <p><strong>Supplier Name :</strong> {request.supplierName}</p>
-                          <p><strong>Quantity:</strong> {request.quantity}</p>
-                          <p><strong>Category:</strong> {request.category}</p>
-                          <p><strong>Main Category:</strong> {request.college}</p>
-                          <p><strong>Subcategory:</strong> {request.department}</p>
-                          <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
-                          <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
-                          <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
-                          <p><strong>Unique ID:</strong> {request.uniqueId}</p>
-                          <strong>Requested Items:</strong>
-                          <ul>
-                            {Array.isArray(request.itemName) && request.itemName.length > 0 ? (
-                              request.itemName.map((item, index) => (
-                                <li key={index}>
-                                  {item.name} (Quantity: {item.quantity}) {request.approved ? '✔️' : '❌'}
-                                </li>
-                              ))
-                            ) : (
-                              <li>No items available</li>
+                    {requestsByCollege[college][category].map((request) => {
+                      return (
+                        <li key={request.id}>
+                          <div>
+                            <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+                            <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+                            <p><strong>Quantity:</strong> {request.quantity}</p>
+                            <p><strong>Category:</strong> {request.category}</p>
+                            <p><strong>Main Category:</strong> {request.college}</p>
+                            <p><strong>Subcategory:</strong> {request.department}</p>
+                            <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
+                            <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
+                            <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
+                            <p><strong>Unique ID:</strong> {request.uniqueId}</p>
+                            <strong>Requested Items:</strong>
+                            <ul>
+                              {Array.isArray(request.itemName) && request.itemName.length > 0 ? (
+                                request.itemName.map((item, index) => {
+                                  const itemRequested = parseInt(item.quantity || 0, 10);
+                                  const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
+                                  const finalNotPurchased = itemRequested - itemPurchased;
+
+                                  return (
+                                    <li key={index}>
+                                      {item.name} - 
+                                      <span> {itemRequested} requested,</span> 
+                                      <span> {itemPurchased} purchased,</span> 
+                                      <span> {finalNotPurchased} not purchased</span>
+                                    </li>
+                                  );
+                                })
+                              ) : (
+                                <li>No items available</li>
+                              )}
+                            </ul>
+                            {request.imageUrl && (
+                              <div className="image-preview">
+                                <h4>Uploaded Image:</h4>
+                                <img src={request.imageUrl} alt="Uploaded" />
+                              </div>
                             )}
-                          </ul>
-                          {request.imageUrl && (
-                            <div className="image-preview">
-                              <h4>Uploaded Image:</h4>
-                              <img src={request.imageUrl} alt="Uploaded" />
-                            </div>
-                          )}
-                          <button onClick={() => deleteRequest(request.id)}>Delete</button>
-                          {!request.approved && (
-                            <>
-                              <button onClick={() => openModal(request)}>More</button>
-                              <button onClick={() => {
-                                setEditingRequest(request);
-                                setRequestDetails({
-                                  itemName: request.itemName,
-                                  category: request.category,
-                                  uniqueId: request.uniqueId,
-                                  college: request.college,
-                                  department: request.department,
-                                  program: request.program,
-                                  requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
-                                  requestPurpose: request.requestPurpose,
-                                  supplierName: request.supplierName,
-                                  quantity: request.quantity,
-                                  imageUrl: request.imageUrl,
-                                  specificType: request.specificType
-                                });
-                              }}>Edit</button>
-                            </>
-                          )}
-                        </div>
-                      </li>
-                    ))}
+                            <button onClick={() => deleteRequest(request.id)}>Delete</button>
+                            {!request.approved && (
+                              <>
+                                <button onClick={() => openModal(request)}>More</button>
+                                <button onClick={() => {
+                                  setEditingRequest(request);
+                                  setRequestDetails({
+                                    itemName: request.itemName,
+                                    category: request.category,
+                                    uniqueId: request.uniqueId,
+                                    college: request.college,
+                                    department: request.department,
+                                    program: request.program,
+                                    requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
+                                    requestPurpose: request.requestPurpose,
+                                    supplierName: request.supplierName,
+                                    quantity: request.quantity,
+                                    imageUrl: request.imageUrl,
+                                    specificType: request.specificType
+                                  });
+                                }}>Edit</button>
+                              </>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -313,34 +326,37 @@ const ApproveRequest = () => {
     e.preventDefault();
 
     const itemsUpdated = currentRequest.itemName.map(item => {
-      const purchasedQuantity = itemQuantities[item.name] || 0;
-      const remainingQuantity = item.quantity - purchasedQuantity < 0 ? 0 : item.quantity - purchasedQuantity;
+      const purchasedQuantity = itemQuantities[item.name] || 0; // Get the purchased quantity from the input
+      const remainingQuantity = item.quantity - purchasedQuantity; // Calculate remaining quantity
+      const status = remainingQuantity === 0 ? '✔️' : (purchasedQuantity > 0 ? '❌' : '❌');
       return { 
         ...item, 
-        quantity: remainingQuantity, 
-        status: purchasedQuantity > 0 ? '✔️' : '❌' 
+        purchasedQuantity: purchasedQuantity,
+        quantity: item.quantity, 
+        status 
       };
     });
 
     const requestRef = doc(db, 'requests', currentRequest.id);
     
-    const allItemsDone = itemsUpdated.every(item => item.status === '✔️');
+    // Set approved to true regardless of remaining quantities
+    const allItemsDone = itemsUpdated.some(item => item.purchasedQuantity > 0);
 
     try {
       await updateDoc(requestRef, {
-        itemName: itemsUpdated,
-        approved: allItemsDone
+ itemName: itemsUpdated,
+        approved: allItemsDone // Set approved to true if any items are purchased
       });
 
       const templateParams = {
         to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com',
-        items: itemsUpdated.map(item => `${item.name} (Quantity: ${item.quantity})`).join(', '),
+        items: itemsUpdated.map(item => `${item.name} (Requested: ${item.quantity}, Purchased: ${item.purchasedQuantity}, Status: ${item.status})`).join(', '),
         action: 'Purchased',
         purchaseDate: formData.purchaseDate,
         requestPurpose: currentRequest.requestPurpose,
         college: currentRequest.college,
         department: currentRequest.department,
-        uniqueId: currentRequest.uniqueId
+        uniqueId: currentRequest.uniqueId,
       };
 
       await emailjs.send('service_bl8cece', 'template_2914ned', templateParams, 'BMRt6JigJjznZL-FA');
@@ -354,7 +370,7 @@ const ApproveRequest = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const storageRef = ref(storage, ` images/${file.name}`);
+      const storageRef = ref(storage, `images/${file.name}`);
       try {
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
@@ -431,14 +447,15 @@ const ApproveRequest = () => {
           View Mode: 
           <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
             <option value="allFolders">All Folders</option>
-            <option value="nonAcademic"> Non Academic Folder</option>
+            <option value="nonAcademic">Non Academic Folder</option>
             <option value="academic">Academic Folder</option>
           </select>
         </label>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <label>Item Name (separate by commas): 
+        <label>
+          Add Item Name: 
           <button type="button" onClick={addItem}>Add Item</button>
         </label>
         {requestDetails.itemName.map((item, index) => (
@@ -459,12 +476,28 @@ const ApproveRequest = () => {
             />
           </div>
         ))}
-        <label>Request Purpose: 
-          <input type="text" name="requestPurpose" value={requestDetails.requestPurpose} onChange={handleInputChange} required />
+        <label>
+          Request Purpose: 
+          <input 
+            type="text" 
+            name="requestPurpose" 
+            value={requestDetails.requestPurpose} 
+            onChange={handleInputChange} 
+            required 
+          />
         </label>
-        <label>Supplier Name: <input type="text" name="supplierName" value={requestDetails.supplierName} onChange={handleInputChange} required />
+        <label>
+          Supplier Name: 
+          <input 
+            type="text" 
+            name="supplierName" 
+            value={requestDetails.supplierName} 
+            onChange={handleInputChange} 
+            required 
+          />
         </label>
-        <label>Category: 
+        <label>
+          Category: 
           <select name="category" value={requestDetails.category} onChange={handleInputChange}>
             <option value="">Select Category</option>
             {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
@@ -472,7 +505,8 @@ const ApproveRequest = () => {
         </label>
         {requestDetails.category && (
           <label>
-            Specific Type: <input 
+            Specific Type: 
+            <input 
               type="text" 
               name="specificType" 
               value={requestDetails.specificType} 
@@ -481,14 +515,17 @@ const ApproveRequest = () => {
             />
           </label>
         )}
-        <label>Main Category: 
+        <label>
+          Main Category: 
           <select name="college" value={requestDetails.college} onChange={handleInputChange}>
             <option value="">Select Main Category</option>
             <option value="Non Academic">Non Academic</option>
-            <option value="Academic">Academic</option></select>
+            <option value="Academic">Academic</option>
+          </select>
         </label>
         {requestDetails.college === "Non Academic" && (
-          <label>Subcategory: 
+          <label>
+            Subcategory: 
             <select name="department" value={requestDetails.department} onChange={handleInputChange}>
               <option value="">Select Non Academic Subcategory</option>
               {nonAcademicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
@@ -497,7 +534,8 @@ const ApproveRequest = () => {
         )}
         {requestDetails.college === "Academic" && (
           <>
-            <label>College: 
+            <label>
+              College: 
               <select name="department" value={requestDetails.department} onChange={handleInputChange}>
                 <option value="">Select Academic College</option>
                 {academicColleges.map((college) => (
@@ -506,7 +544,8 @@ const ApproveRequest = () => {
               </select>
             </label>
             {requestDetails.department && academicPrograms[requestDetails.department] && academicPrograms[requestDetails.department].length > 0 && (
-              <label>Academic Program: 
+              <label>
+                Academic Program: 
                 <select name="program" value={requestDetails.program} onChange={handleInputChange}>
                   <option value="">Select Academic Program</option>
                   {academicPrograms[requestDetails.department].map((program) => (
@@ -517,8 +556,15 @@ const ApproveRequest = () => {
             )}
           </>
         )}
-        <label>Request Date: 
-          <input type="date" name="requestDate" value={requestDetails.requestDate} onChange={handleInputChange} required />
+        <label>
+          Request Date: 
+          <input 
+            type="date" 
+            name="requestDate" 
+            value={requestDetails.requestDate} 
+            onChange={handleInputChange} 
+            required 
+          />
         </label>
         <div className="image-upload-section">
           <h3>Upload Image</h3>
@@ -594,8 +640,14 @@ const ApproveRequest = () => {
             <form onSubmit={handleEmailSubmit}>
               <label>
                 Date of Purchase:
-                <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleFormDataChange} required />
-              </ label>
+                <input
+                  type="date"
+                  name="purchaseDate"
+                  value={formData.purchaseDate || new Date().toISOString().split('T')[0]}
+                  onChange={handleFormDataChange}
+                  required
+                />
+              </label>
               <label>
                 Requestor Email:
                 <input
@@ -608,7 +660,13 @@ const ApproveRequest = () => {
               </label>
               <label>
                 Requestor's Phone:
-                <input type="tel" name="requestorPhone" value={formData.requestorPhone} onChange={handleFormDataChange} required />
+                <input
+                  type="tel"
+                  name="requestorPhone"
+                  value={formData.requestorPhone}
+                  onChange={handleFormDataChange}
+                  required
+                />
               </label>
               <button type="submit">Submit</button>
               <button type="button" onClick={closeModal}>Cancel</button>
