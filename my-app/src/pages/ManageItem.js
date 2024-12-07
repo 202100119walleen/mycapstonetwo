@@ -11,6 +11,7 @@ const ManageItem = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateDelivered, setDateDelivered] = useState({});
   const [itemQuantities, setItemQuantities] = useState({});
+  const [requestedQuantities, setRequestedQuantities] = useState({});
   const [imageFiles, setImageFiles] = useState({});
   const [editMode, setEditMode] = useState({});
   const [visibleSections, setVisibleSections] = useState({});
@@ -31,7 +32,8 @@ const ManageItem = () => {
     request.itemName.map((item) => ({
       uniqueId: request.uniqueId,
       itemName: item.name,
-      purchasedQuantity: request.quantity || 0,
+      purchasedQuantity: item.purchasedQuantity || 0, // Use purchasedQuantity from the item
+      requestedQuantity: item.quantity || 0, // Ensure this reflects the requested quantity
       supplierName: request.supplierName,
       category: request.category,
       college: request.college || 'N/A',
@@ -43,6 +45,7 @@ const ManageItem = () => {
       requestId: request.id,
       dateDelivered: request.dateDelivered || '',
       image: request.image || null,
+      isApproved: request.approved || false, // Check if the request is approved
     }))
   );
 
@@ -60,9 +63,8 @@ const ManageItem = () => {
     link.click();
   };
 
-  // Group items by college
   const groupedItems = flattenedItems.reduce((acc, item) => {
-    const collegeKey = item.college; // Use college name as the key
+    const collegeKey = item.college;
     if (!acc[collegeKey]) {
       acc[collegeKey] = [];
     }
@@ -71,12 +73,19 @@ const ManageItem = () => {
   }, {});
 
   const handleDelete = async (id) => {
+    const requestToDelete = flattenedItems.find(item => item.requestId === id);
+    
+    if (requestToDelete && requestToDelete.isApproved) {
+      alert("This item cannot be deleted because it is approved.");
+      return;
+    }
+  
     const requestRef = doc(db, 'requests', id);
     
     if (window.confirm("Are you sure you want to delete this item?")) {
       await deleteDoc(requestRef);
     }
-  };
+  };  
 
   const handleDateChange = (id, date) => {
     setDateDelivered((prev) => ({ ...prev, [id]: date }));
@@ -84,6 +93,10 @@ const ManageItem = () => {
 
   const handleQuantityChange = (id, quantity) => {
     setItemQuantities((prev) => ({ ...prev, [id]: quantity }));
+  };
+
+  const handleRequestedQuantityChange = (id, quantity) => {
+    setRequestedQuantities((prev ) => ({ ...prev, [id]: quantity }));
   };
 
   const handleImageChange = (id, file) => {
@@ -99,20 +112,26 @@ const ManageItem = () => {
     let imageUrl = null;
 
     if (imageFiles[id]) {
-      const storageRef = ref(storage, `images/${imageFiles[id].name}`);
-      await uploadBytes(storageRef, imageFiles[id]);
-      imageUrl = await getDownloadURL(storageRef);
+      try {
+        const storageRef = ref(storage, `images/${imageFiles[id].name}`);
+        await uploadBytes(storageRef, imageFiles[id]);
+        imageUrl = await getDownloadURL(storageRef);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        imageUrl = null; // Handle the error as needed
+      }
     }
 
     await updateDoc(requestRef, {
       dateDelivered: dateDelivered[id] || null,
-      quantity: itemQuantities[id] || null,
+      purchasedQuantity: itemQuantities[id] || null,
+      requestedQuantity: requestedQuantities[id] || null,
       image: imageUrl || null,
     });
 
-    // Reset the state after update
     setDateDelivered((prev) => ({ ...prev, [id]: '' }));
     setItemQuantities((prev) => ({ ...prev, [id]: null }));
+    setRequestedQuantities((prev) => ({ ...prev, [id]: null }));
     setImageFiles((prev) => ({ ...prev, [id]: null }));
     setEditMode((prev) => ({ ...prev, [id]: false }));
   };
@@ -148,7 +167,8 @@ const ManageItem = () => {
               <tr>
                 <th data-label="Unique ID">Unique ID</th>
                 <th data-label="Item Name">Item Name</th>
-                <th data-label="Purchased Quantity">Purchased Quantity</th>
+                <th data-label="Delivered Quantity">Delivered Quantity</th>
+                <th data-label="Requested Quantity">Requested Quantity</th>
                 <th data-label="Supplier Name">Supplier Name</th>
                 <th data-label="Category">Category</th>
                 <th data-label="Department">Department</th>
@@ -180,6 +200,14 @@ const ManageItem = () => {
                       type="number"
                       value={itemQuantities[item.requestId] || item.purchasedQuantity}
                       onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                      on Change={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
                       disabled={!editMode[item.requestId]}
                     />
                   </td>
@@ -220,7 +248,12 @@ const ManageItem = () => {
                     ) : (
                       <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
                     )}
-                    <button onClick={() => handleDelete(item.requestId)}>Delete</button>
+                    <button 
+                      onClick={() => handleDelete(item.requestId)} 
+                      disabled={item.isApproved}
+                    >
+                      Delete
+                    </button>
                   </td>
                   <td>
                     <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
@@ -247,7 +280,8 @@ const ManageItem = () => {
                     <tr>
                       <th data-label="Unique ID">Unique ID</th>
                       <th data-label="Item Name">Item Name</th>
-                      <th data-label="Purchased Quantity">Purchased Quantity</th>
+                      <th data-label="Delivered Quantity">Delivered Quantity</th>
+                      <th data-label="Requested Quantity">Requested Quantity</th>
                       <th data-label="Supplier Name">Supplier Name</th>
                       <th data-label="Category">Category</th>
                       <th data-label="Department">Department</th>
@@ -282,7 +316,15 @@ const ManageItem = () => {
                             disabled={!editMode[item.requestId]}
                           />
                         </td>
-                        <td>{item.supplierName}</td>
+                        <td>
+                          <input
+                            type="number"
+                            value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                            onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
+                            disabled={!editMode[item.requestId]}
+                          />
+                        </td>
+                        <td>{item.supplierName}</td> 
                         <td>{item.category}</td>
                         <td>{item.department}</td>
                         <td>{item.program}</td>
@@ -319,7 +361,12 @@ const ManageItem = () => {
                           ) : (
                             <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
                           )}
-                          <button onClick={() => handleDelete(item.requestId)}>Delete</button>
+                          <button 
+                            onClick={() => handleDelete(item.requestId)} 
+                            disabled={item.isApproved}
+                          >
+                            Delete
+                          </button>
                         </td>
                         <td>
                           <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>

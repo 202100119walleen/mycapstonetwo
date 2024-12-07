@@ -100,6 +100,7 @@ const ApproveRequest = () => {
     return () => unsubscribe();
   }, []);
 
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setRequestDetails((prev) => ({ ...prev, [name]: value }));
@@ -440,7 +441,7 @@ const ApproveRequest = () => {
 
   return (
     <div className="approve-request">
-      <h1>Approve Requests</h1>
+      <h1>Approved Requests</h1>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
       <div className="view-mode-section">
         <label>
