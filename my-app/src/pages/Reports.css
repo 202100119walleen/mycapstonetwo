@@ -1,156 +1,47 @@
 /* Reports.css */
 
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f9f9f9; /* Light background for better readability */
-    margin: 0;
-    padding: 20px;
-  }
-  
-  /* Main reports container */
-  .reports-container {
-    max-width: 800px; /* Limit max width for larger screens */
-    margin: auto; /* Center the container */
-    background: #ffffff; /* White background for the reports box */
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Headings */
-  h1 {
-    text-align: center;
-    color: #660809; /* Dark red color for the main heading */
-    display: flex; /* Flexbox for icon and text alignment */
-    align-items: center; /* Center items vertically */
-    justify-content: center; /* Center items horizontally */
-  }
-  
-  .folder-icon {
-    margin-right: 10px; /* Space between icon and text */
-    font-size: 2em; /* Icon size */
-  }
-  
-  h2 {
-    color: #990c12; /* Darker red color for sub-headings */
-    margin-top: 20px;
-  }
-  
-  h3 {
-    color: #660809; /* Dark red color for category headings */
-  }
-  
-  /* Search bar styling */
-  .search-bar {
-    margin-bottom: 20px;
-  }
-  
-  .search-bar input {
-    width: 100%; /* Full width for search input */
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Ensure padding doesn't affect total width */
-  }
-  
-  /* Group by selector styling */
-  .group-by-selector {
-    margin-bottom: 20px;
-  }
-  
-  .group-by-selector label {
-    display: flex; /* Align label and select in a row */
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .group-by-selector select {
-    margin-left: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  /* Report section styling */
-  .report-section {
-    margin-bottom: 30px; /* Space between sections */
-    border-top: 1px solid #ccc; /* Top border for separation */
-    padding-top: 10px;
-  }
-  
-  /* Toggle button styling */
-  .toggle-button {
-    background: none; /* No background for buttons */
-    border: none;
-    color: #990c12; /* Bright red color for toggle text */
-    cursor: pointer;
-    font-size: 1em; /* Font size for toggle button */
-    transition: color 0.3s ease; /* Smooth transition */
-  }
-  
-  .toggle-button:hover {
-    color: #ffffff; /* Darker red on hover */
-  }
-  
-  /* List styling */
-  ul {
-    list-style-type: none; /* Remove bullet points */
-    padding: 0; /* Remove default padding */
-  }
-  
-  li {
-    background: #f9f9f9; /* Light background for list items */
-    margin: 10px 0; /* Space between items */
-    padding: 10px;
-    border-radius: 4px; /* Rounded corners for items */
-  }
-  
-  /* Report image styling */
-  .report-image {
-    width: 100px;
-    height: auto;
-    margin-top: 10px;
-    border-radius: 4px;
-  }
-  
-  
-  /* Responsive design */
-  @media (max-width: 600px) {
-    .reports-container {
-      padding: 15px; /* Less padding on small screens */
-    }
-  
-    h1 {
-      font-size: 1.5em; /* Smaller heading for small screens */
-    }
-  
-    h2 {
-      font-size: 1.2em; /* Smaller sub-heading for small screens */
-    }
-  
-    h3 {
-      font-size: 1.1em; /* Smaller category heading for small screens */
-    }
-  }
-  /* Reports.css */
-  
-  /* Action buttons styling */
-  .report-actions {
-    margin-bottom: 10px; /* Space below action buttons */
-  }
-  
-  .action-button {
-    background-color: #660809; /* Blue background for buttons */
-    color: white; /* White text color */
-    border: none; /* No border */
-    border-radius: 4px; /* Rounded corners */
-    padding: 10px 15px; /* Padding inside buttons */
-    cursor: pointer; /* Pointer cursor on hover */
-    margin-right: 10px; /* Space between buttons */
-    transition: background-color 0.3s ease; /* Smooth transition */
-  }
-  
-  .action-button:hover {
-    background-color: #850b0c; /* Darker blue on hover */
-  }
-  
+.report-container {
+  border-radius: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  background-color: #fff;
+}
+
+.report-header {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-bottom: 20px;
+}
+
+.report-table th, .report-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.report-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.report-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.report-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.report-chart {
+  width: 100%;
+  height: 300px;
+  /* Add your specific chart styling here */
+}
