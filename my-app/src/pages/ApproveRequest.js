@@ -88,6 +88,9 @@ const ApproveRequest = () => {
   const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' });
   const videoRef = useRef(null);
   
+
+  
+  
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
     const unsubscribe = onSnapshot(requestCollection, (snapshot) => {
@@ -214,6 +217,7 @@ const ApproveRequest = () => {
 
   const renderRequestsByFolder = (folderName) => {
     const requestsByCollege = groupedRequests();
+  
     return Object.keys(requestsByCollege).map((college) => (
       college === folderName && (
         <div key={college} className="college-section">
@@ -222,78 +226,140 @@ const ApproveRequest = () => {
           </h3>
           {openFolders[college] && (
             <>
- {Object.keys(requestsByCollege[college]).map((category) => (
+              {Object.keys(requestsByCollege[college]).map((category) => (
                 <div key={category} className="category-section">
                   <h4>{category}</h4>
                   <ul>
-                    {requestsByCollege[college][category].map((request) => {
-                      return (
-                        <li key={request.id}>
-                          <div>
-                            <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-                            <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-                            <p><strong>Quantity:</strong> {request.quantity}</p>
-                            <p><strong>Category:</strong> {request.category}</p>
-                            <p><strong>Main Category:</strong> {request.college}</p>
-                            <p><strong>Subcategory:</strong> {request.department}</p>
-                            <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
-                            <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
-                            <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
-                            <p><strong>Unique ID:</strong> {request.uniqueId}</p>
-                            <strong>Requested Items:</strong>
-                            <ul>
-                              {Array.isArray(request.itemName) && request.itemName.length > 0 ? (
-                                request.itemName.map((item, index) => {
-                                  const itemRequested = parseInt(item.quantity || 0, 10);
-                                  const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
-                                  const finalNotPurchased = itemRequested - itemPurchased;
-
-                                  return (
-                                    <li key={index}>
-                                      {item.name} - 
-                                      <span> {itemRequested} requested,</span> 
-                                      <span> {itemPurchased} purchased,</span> 
-                                      <span> {finalNotPurchased} not purchased</span>
-                                    </li>
-                                  );
-                                })
-                              ) : (
-                                <li>No items available</li>
-                              )}
-                            </ul>
-                            {request.imageUrl && (
-                              <div className="image-preview">
-                                <h4>Uploaded Image:</h4>
-                                <img src={request.imageUrl} alt="Uploaded" />
-                              </div>
+                    {/* Separate unapproved and approved requests */}
+                    {requestsByCollege[college][category].filter(request => !request.approved).map((request) => (
+                      <li key={request.id}>
+                        <div>
+                          <p><strong>Unique ID:</strong> {request.uniqueId}</p>
+                          <strong>Requested Items:</strong>
+                          <ul>
+                            {Array.isArray(request.itemName) && request.itemName.length > 0 ? (
+                              request.itemName.map((item, index) => {
+                                const itemRequested = parseInt(item.quantity || 0, 10);
+                                const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
+                                const finalNotPurchased = itemRequested - itemPurchased;
+  
+                                return (
+                                  <li key={index}>
+                                    {item.name} - 
+                                    <span> {itemRequested} requested,</span> 
+                                    <span> {itemPurchased} purchased,</span> 
+                                    <span> {finalNotPurchased} not purchased</span>
+                                  </li>
+                                );
+                              })
+                            ) : (
+                              <li>No items available</li>
                             )}
-                            <button onClick={() => deleteRequest(request.id)}>Delete</button>
-                            {!request.approved && (
-                              <>
-                                <button onClick={() => openModal(request)}>More</button>
-                                <button onClick={() => {
-                                  setEditingRequest(request);
-                                  setRequestDetails({
-                                    itemName: request.itemName,
-                                    category: request.category,
-                                    uniqueId: request.uniqueId,
-                                    college: request.college,
-                                    department: request.department,
-                                    program: request.program,
-                                    requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
-                                    requestPurpose: request.requestPurpose,
-                                    supplierName: request.supplierName,
-                                    quantity: request.quantity,
-                                    imageUrl: request.imageUrl,
-                                    specificType: request.specificType
-                                  });
-                                }}>Edit</button>
-                              </>
+                          </ul>
+                          <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+                          <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+                          <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
+                          <p><strong>Category:</strong> {request.category}</p>
+                          <p><strong>Main Category:</strong> {request.college}</p>
+                          <p><strong>Subcategory:</strong> {request.department}</p>
+                          <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
+                          <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
+                          {request.imageUrl && (
+                            <div className="image-preview">
+                              <h4>Uploaded Image:</h4>
+                              <img src={request.imageUrl} alt="Uploaded" />
+                            </div>
+                          )}
+                          <button onClick={() => deleteRequest(request.id)}>Delete</button>
+                          {!request.approved && (
+                            <>
+                              <button onClick={() => openModal(request)}>More</button>
+                              <button onClick={() => {
+                                setEditingRequest(request);
+                                setRequestDetails({
+                                  itemName: request.itemName,
+                                  category: request.category,
+                                  uniqueId: request.uniqueId,
+                                  college: request.college,
+                                  department: request.department,
+                                  program: request.program,
+                                  requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
+                                  requestPurpose: request.requestPurpose,
+                                  supplierName: request.supplierName,
+                                  imageUrl: request.imageUrl,
+                                  specificType: request.specificType
+                                });
+                              }}>Edit</button>
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                    {/* Render approved requests after unapproved */}
+                    {requestsByCollege[college][category].filter(request => request.approved).map((request) => (
+                      <li key={request.id}>
+                        <div>
+                          <p><strong>Unique ID:</strong> {request.uniqueId}</p>
+                          <strong>Requested Items:</strong>
+                          <ul>
+                            {Array.isArray(request.itemName) && request.itemName.length > 0 ? (
+                              request.itemName.map((item, index) => {
+                                const itemRequested = parseInt(item.quantity || 0, 10);
+                                const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
+                                const finalNotPurchased = itemRequested - itemPurchased;
+  
+                                return (
+                                  <li key={index}>
+                                    {item.name} - 
+                                    <span> {itemRequested} requested,</span> 
+                                    <span> {itemPurchased} purchased,</span> 
+                                    <span> {finalNotPurchased} not purchased</span>
+                                  </li>
+                                );
+                              })
+                            ) : (
+                              <li>No items available</li>
                             )}
-                          </div>
-                        </li>
-                      );
-                    })}
+                          </ul>
+                          <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+                          <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+                          <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
+                          <p><strong>Category:</strong> {request.category}</p>
+                          <p><strong>Main Category:</strong> {request.college}</p>
+                          <p><strong>Subcategory:</strong> {request.department}</p>
+                          <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
+                          <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
+                          {request.imageUrl && (
+                            <div className="image-preview">
+                              <h4>Uploaded Image:</h4>
+                              <img src={request.imageUrl} alt="Uploaded" />
+                            </div>
+                          )}
+                          <button onClick={() => deleteRequest(request.id)}>Delete</button>
+                          {!request.approved && (
+                            <>
+                              <button onClick={() => openModal(request)}>More</button>
+                              <button onClick={() => {
+                                setEditingRequest(request);
+                                setRequestDetails({
+                                  itemName: request.itemName,
+                                  category: request.category,
+                                  uniqueId: request.uniqueId,
+                                  college: request.college,
+                                  department: request.department,
+                                  program: request.program,
+                                  requestDate: new Date(request.requestDate).toISOString().substring(0, 10),
+                                  requestPurpose: request.requestPurpose,
+                                  supplierName: request.supplierName,
+                                  imageUrl: request.imageUrl,
+                                  specificType: request.specificType
+                                });
+                              }}>Edit</button>
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               ))}
@@ -303,6 +369,7 @@ const ApproveRequest = () => {
       )
     ));
   };
+  
 
   const openModal = (request) => {
     setCurrentRequest(request);

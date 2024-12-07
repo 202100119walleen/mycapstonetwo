@@ -278,22 +278,22 @@ const ManageItem = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th data-label="Unique ID">Unique ID</th>
-                      <th data-label="Item Name">Item Name</th>
-                      <th data-label="Delivered Quantity">Delivered Quantity</th>
-                      <th data-label="Requested Quantity">Requested Quantity</th>
-                      <th data-label="Supplier Name">Supplier Name</th>
-                      <th data-label="Category">Category</th>
-                      <th data-label="Department">Department</th>
-                      <th data-label="Program">Program</th>
-                      <th data-label="Request Date">Request Date</th>
-                      <th data-label="Request Purpose">Request Purpose</th>
-                      <th data-label="Specific Type">Specific Type</th>
-                      <th data-label="Date Delivered">Date Delivered</th>
-                      <th data-label="Image Upload">Image Upload</th>
-                      <th data-label="Image View">Image View</th>
-                      <th data-label="Actions">Actions</th>
-                      <th data-label="Download Barcode">Download Barcode</th>
+                    <th data-label="Unique ID">Unique ID</th>
+          <th data-label="Item Name">Item Name</th>
+          <th data-label="Requested Quantity">Requested Quantity</th> {/* Moved here */}
+          <th data-label="Delivered Quantity">Delivered Quantity</th> {/* Moved here */}
+          <th data-label="Supplier Name">Supplier Name</th>
+          <th data-label="Category">Category</th>
+          <th data-label="Department">Department</th>
+          <th data-label="Program">Program</th>
+          <th data-label="Request Date">Request Date</th>
+          <th data-label="Request Purpose">Request Purpose</th>
+          <th data-label="Specific Type">Specific Type</th>
+          <th data-label="Date Delivered">Date Delivered</th>
+          <th data-label="Image Upload">Image Upload</th>
+          <th data-label="Image View">Image View</th>
+          <th data-label="Actions">Actions</th>
+          <th data-label="Download Barcode">Download Barcode</th>
                     </tr>
                   </thead>
                   <tbody>
