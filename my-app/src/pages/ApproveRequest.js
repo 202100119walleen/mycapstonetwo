@@ -109,17 +109,32 @@ const ApproveRequest = () => {
     setRequestDetails((prev) => ({ ...prev, [name]: value }));
     setErrorMessage('');
   };
+  
 
-  const handleItemChange = (index, field, value) => {
-    const newItemNames = [...requestDetails.itemName];
-    newItemNames[index] = { ...newItemNames[index], [field]: value };
-    setRequestDetails((prev) => ({ ...prev, itemName: newItemNames }));
-  };
-
-  const addItem = () => {
+  const handleItemChange = (id, field, value) => {
     setRequestDetails((prev) => ({
       ...prev,
-      itemName: [...prev.itemName, { name: '', quantity: '', purchasedQuantity: 0 }]
+      itemName: prev.itemName.map((item) =>
+        item.id === id
+          ? { ...item, [field]: value }  // Update the correct item
+          : item
+      ),
+    }));
+  };
+  
+
+
+
+  const addItem = () => {
+    const newItem = {
+      id: `item-${Date.now()}`,  // Generate a unique ID using the current timestamp
+      name: '', 
+      quantity: 0,
+      status: '❌',  // Default status
+    };
+    setRequestDetails((prev) => ({
+      ...prev,
+      itemName: [...prev.itemName, newItem],  // Add the new item with a unique ID
     }));
   };
 
@@ -144,7 +159,7 @@ const ApproveRequest = () => {
         const requestRef = doc(db, 'requests', editingRequest.id);
         await updateDoc(requestRef, {
           ...requestDetails,
-          uniqueId: editingRequest.uniqueId,
+          uniqueId: editingRequest.uniqueId, // Keep the original unique ID
           requestDate: new Date(requestDetails.requestDate).getTime(),
         });
         setEditingRequest(null);
@@ -527,23 +542,24 @@ const ApproveRequest = () => {
           <button type="button" onClick={addItem}>Add Item</button>
         </label>
         {requestDetails.itemName.map((item, index) => (
-          <div key={index}>
-            <input 
-              type="text" 
-              placeholder="Item Name" 
-              value={item.name} 
-              onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
-              required 
-            />
-            <input 
-              type="number" 
-              placeholder="Quantity" 
-              value={item.quantity} 
-              onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} 
-              required 
-            />
-          </div>
-        ))}
+  <div key={item.id}>  {/* Use the unique ID as the key */}
+    <input 
+      type="text" 
+      placeholder="Item Name" 
+      value={item.name} 
+      onChange={(e) => handleItemChange(item.id, 'name', e.target.value)} 
+      required 
+    />
+    <input 
+      type="number" 
+      placeholder="Quantity" 
+      value={item.quantity} 
+      onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)} 
+      required 
+    />
+  </div>
+))}
+
         <label>
           Request Purpose: 
           <input 
