@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase/firebase-config';
-import { storage } from '../firebase/firebase-config';
+import { db, storage } from '../firebase/firebase-config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './ManageItem.css';
 import JsBarcode from 'jsbarcode';
@@ -9,10 +8,10 @@ import JsBarcode from 'jsbarcode';
 const ManageItem = () => {
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateDelivered, setDateDelivered] = useState({}); 
-  const [itemQuantities, setItemQuantities] = useState({});   
+  const [dateDelivered, setDateDelivered] = useState({});
+  const [itemQuantities, setItemQuantities] = useState({});
   const [requestedQuantities, setRequestedQuantities] = useState({});
-  const [imageFiles, setImageFiles] = useState({}); 
+  const [imageFiles, setImageFiles] = useState({});
   const [editMode, setEditMode] = useState({});
   const [visibleSections, setVisibleSections] = useState({});
 
@@ -29,7 +28,7 @@ const ManageItem = () => {
   }, []);
 
   const flattenedItems = items.flatMap((request) =>
-    request.itemName.map((item, index) => ({
+    Array.isArray(request.itemName) ? request.itemName.map((item, index) => ({
       uniqueId: `${request.uniqueId}-${index + 1}`,  // Append batch number to the uniqueId
       itemName: item.name,
       purchasedQuantity: item.purchasedQuantity || 0,
@@ -46,9 +45,9 @@ const ManageItem = () => {
       dateDelivered: request.dateDelivered || '',
       image: request.image || null,
       isApproved: request.approved || false,
-    }))
+    })) : [] // Fallback to an empty array if itemName is not an array
   );
-  
+
   const downloadBarcode = (uniqueId, itemName) => {
     const canvas = document.createElement('canvas');
     JsBarcode(canvas, uniqueId, {
@@ -85,7 +84,7 @@ const ManageItem = () => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       await deleteDoc(requestRef);
     }
-  };  
+  };
 
   const handleDateChange = (uniqueId, date) => {
     setDateDelivered((prev) => ({ ...prev, [uniqueId]: date }));
@@ -113,7 +112,7 @@ const ManageItem = () => {
   const handleUpdate = async (id) => {
     const requestRef = doc(db, 'requests', id);
     let imageUrl = null;
-  
+
     if (imageFiles[id]) {
       try {
         const storageRef = ref(storage, `images/${imageFiles[id].name}`);
@@ -124,14 +123,14 @@ const ManageItem = () => {
         imageUrl = null; // Handle the error as needed
       }
     }
-  
+
     await updateDoc(requestRef, {
       dateDelivered: dateDelivered[id] || null,
       purchasedQuantity: itemQuantities[id] || null,
       requestedQuantity: requestedQuantities[id] || null,
       image: imageUrl || null,
     });
-  
+
     setDateDelivered((prev) => ({ ...prev, [id]: '' }));
     setItemQuantities((prev) => ({ ...prev, [id]: null }));
     setRequestedQuantities((prev) => ({ ...prev, [id]: null }));
@@ -255,9 +254,7 @@ const ManageItem = () => {
                     )}
                   </td>
                   <td>
-                    <button
-                      onClick={() => handleEditToggle(item.uniqueId)}
-                    >
+                    <button onClick={() => handleEditToggle(item.uniqueId)}>
                       {editMode[item.uniqueId] ? 'Cancel' : 'Edit'}
                     </button>
                     <button
@@ -359,9 +356,7 @@ const ManageItem = () => {
                           )}
                         </td>
                         <td>
-                          <button
-                            onClick={() => handleEditToggle(item.uniqueId)}
-                          >
+                          <button onClick={() => handleEditToggle(item.uniqueId)}>
                             {editMode[item.uniqueId] ? 'Cancel' : 'Edit'}
                           </button>
                           <button
@@ -388,4 +383,4 @@ const ManageItem = () => {
   );
 };
 
-export default ManageItem;
+export default ManageItem; 
