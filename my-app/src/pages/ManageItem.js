@@ -13,8 +13,7 @@ const ManageItem = () => {
   const [itemQuantities, setItemQuantities] = useState({});
   const [requestedQuantities, setRequestedQuantities] = useState({});
   const [imageFiles, setImageFiles] = useState({});
-  const [editModeId, setEditModeId] = useState(null);
-  const [currentlyEditingUniqueId, setCurrentlyEditingUniqueId] = useState(null);
+  const [editMode, setEditMode] = useState({});
   const [visibleSections, setVisibleSections] = useState({});
 
   useEffect(() => {
@@ -33,8 +32,8 @@ const ManageItem = () => {
     request.itemName.map((item) => ({
       uniqueId: request.uniqueId,
       itemName: item.name,
-      purchasedQuantity: item.purchasedQuantity || 0,
-      requestedQuantity: item.quantity || 0,
+      purchasedQuantity: item.purchasedQuantity || 0, // Use purchasedQuantity from the item
+      requestedQuantity: item.quantity || 0, // Ensure this reflects the requested quantity
       supplierName: request.supplierName,
       category: request.category,
       college: request.college || 'N/A',
@@ -46,7 +45,7 @@ const ManageItem = () => {
       requestId: request.id,
       dateDelivered: request.dateDelivered || '',
       image: request.image || null,
-      isApproved: request.approved || false,
+      isApproved: request.approved || false, // Check if the request is approved
     }))
   );
 
@@ -97,72 +96,179 @@ const ManageItem = () => {
   };
 
   const handleRequestedQuantityChange = (id, quantity) => {
-    setRequestedQuantities((prev) => ({ ...prev, [id]: quantity }));
+    setRequestedQuantities((prev ) => ({ ...prev, [id]: quantity }));
   };
 
   const handleImageChange = (id, file) => {
-    setImageFiles((prev) => ({ ...prev, [id ]: file }));
+    setImageFiles((prev) => ({ ...prev, [id]: file }));
   };
-  const handleEditToggle = (item) => {
-    if (editModeId && currentlyEditingUniqueId === item.uniqueId) {
-      // If the same item is clicked again, exit edit mode
-      setEditModeId(null);
-      setCurrentlyEditingUniqueId(null);
-    } else if (editModeId) {
-      // If another item is being edited, alert the user
-      alert("You can only edit one item at a time.");
-    } else {
-      // Set the item to edit mode
-      setEditModeId(item.requestId);
-      setCurrentlyEditingUniqueId(item.uniqueId);
-    }
+
+  const handleEditToggle = (id) => {
+    setEditMode((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleUpdate = async (id) => {
-    const itemToUpdate = flattenedItems.find(item => item.requestId === id);
-    
-    if (itemToUpdate && itemToUpdate.uniqueId === currentlyEditingUniqueId) {
-      const updatedData = {
-        dateDelivered: dateDelivered[id] || '',
-        purchasedQuantity: itemQuantities[id] || 0,
-        requestedQuantity: requestedQuantities[id] || 0,
-        image: imageFiles[id] ? await uploadImage(id) : null,
-      };
-  
-      const requestRef = doc(db, 'requests', id);
-      await updateDoc(requestRef, updatedData);
-      setEditModeId(null);
-      setCurrentlyEditingUniqueId(null);
-    } else {
-      alert("You cannot update this item because it is not the one currently being edited.");
+    const requestRef = doc(db, 'requests', id);
+    let imageUrl = null;
+
+    if (imageFiles[id]) {
+      try {
+        const storageRef = ref(storage, `images/${imageFiles[id].name}`);
+        await uploadBytes(storageRef, imageFiles[id]);
+        imageUrl = await getDownloadURL(storageRef);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        imageUrl = null; // Handle the error as needed
+      }
     }
+
+    await updateDoc(requestRef, {
+      dateDelivered: dateDelivered[id] || null,
+      purchasedQuantity: itemQuantities[id] || null,
+      requestedQuantity: requestedQuantities[id] || null,
+      image: imageUrl || null,
+    });
+
+    setDateDelivered((prev) => ({ ...prev, [id]: '' }));
+    setItemQuantities((prev) => ({ ...prev, [id]: null }));
+    setRequestedQuantities((prev) => ({ ...prev, [id]: null }));
+    setImageFiles((prev) => ({ ...prev, [id]: null }));
+    setEditMode((prev) => ({ ...prev, [id]: false }));
   };
 
-  const uploadImage = async (id) => {
-    const file = imageFiles[id];
-    const storageRef = ref(storage, `images/${file.name}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  };
+  const filteredItems = flattenedItems.filter(item => 
+    item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.college.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.program.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const toggleVisibility = (college) => {
-    setVisibleSections((prev) => ({
-      ...prev,
-      [college]: !prev[college],
-    }));
+    setVisibleSections((prev) => ({ ...prev, [college]: !prev[college] }));
   };
 
   return (
     <div className="manage-item">
-      <h1>Manage Items</h1>
+      <h1>Manage Item</h1>
       <input
         type="text"
-        placeholder="Search..."
+        placeholder="Search Colleges, Departments, Category, Item Name"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
+        className="search-barmanage"
       />
-      {searchQuery === '' && Object.keys(groupedItems).length > 0 ? (
+      {searchQuery && filteredItems.length > 0 ? (
         <div>
+          <h2>Search Results:</h2>
+          <table>
+            <thead>
+              <tr>
+                <th data-label="Unique ID">Unique ID</th>
+                <th data-label="Item Name">Item Name</th>
+                <th data-label="Delivered Quantity">Delivered Quantity</th>
+                <th data-label="Requested Quantity">Requested Quantity</th>
+                <th data-label="Supplier Name">Supplier Name</th>
+                <th data-label="Category">Category</th>
+                <th data-label="Department">Department</th>
+                <th data-label="Program">Program</th>
+                <th data-label="Request Date">Request Date</th>
+                <th data-label="Request Purpose">Request Purpose</th>
+                <th data-label="Specific Type">Specific Type</th>
+                <th data-label="Date Delivered">Date Delivered</th>
+                <th data-label="Image Upload">Image Upload</th>
+                <th data-label="Image View">Image View</th>
+                <th data-label="Actions">Actions</th>
+                <th data-label="Download Barcode">Download Barcode</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredItems.map((item) => (
+                <tr key={item.uniqueId}>
+                  <td>{item.uniqueId}</td>
+                  <td>
+                    <span 
+                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                      onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
+                    >
+                      {item.itemName}
+                    </span>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      value={itemQuantities[item.requestId] || item.purchasedQuantity}
+                      onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                      on Change={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
+                    />
+                  </td>
+                  <td>{item.supplierName}</td>
+                  <td>{item.category}</td>
+                  <td>{item.department}</td>
+                  <td>{item.program}</td>
+                  <td>{item.requestDate}</td>
+                  <td>{item.requestPurpose}</td>
+                  <td>{item.specificType}</td>
+                  <td>
+                    <input
+                      type="date"
+                      value={dateDelivered[item.requestId] || item.dateDelivered}
+                      onChange={(e) => handleDateChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="file"
+                      onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
+                      disabled={!editMode[item.requestId]}
+                    />
+                  </td>
+                  <td>
+                    {item.image ? (
+                      <a href={item.image} target="_blank" rel="noopener noreferrer">
+                        View Image
+                      </a>
+                    ) : (
+                      <span>No Image</span>
+                    )}
+                  </td>
+                  <td>
+                    {editMode[item.requestId] ? (
+                      <button onClick={() => handleUpdate(item.requestId)}>Save</button>
+                    ) : (
+                      <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                    )}
+                    <button 
+                      onClick={() => handleDelete(item.requestId)} 
+                      disabled={item.isApproved}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                  <td>
+                    <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        searchQuery && <p>No items match your search criteria.</p>
+      )}
+      {searchQuery === '' && Object.keys(groupedItems).length > 0 && (
+        <div>
+          <h2>All Items:</h2>
           {Object.keys(groupedItems).map((college) => (
             <div key={college}>
               <h2 onClick={() => toggleVisibility(college)} style={{ cursor: 'pointer' }}>
@@ -172,35 +278,42 @@ const ManageItem = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Unique ID</th>
-                      <th>Item Name</th>
-                      <th>Delivered Quantity</th>
-                      <th>Requested Quantity</th>
-                      <th>Supplier Name</th>
-                      <th>Category</th>
-                      <th>Department</th>
-                      <th>Program</th>
-                      <th>Request Date</th>
-                      <th>Request Purpose</th>
-                      <th>Specific Type</th>
-                      <th>Date Delivered</th>
-                      <th>Image Upload</th>
-                      <th>Image View</th>
-                      <th>Actions</th>
-                      <th>Download Barcode</th>
+                      <th data-label="Unique ID">Unique ID</th>
+                      <th data-label="Item Name">Item Name</th>
+                      <th data-label="Delivered Quantity">Delivered Quantity</th>
+                      <th data-label="Requested Quantity">Requested Quantity</th>
+                      <th data-label="Supplier Name">Supplier Name</th>
+                      <th data-label="Category">Category</th>
+                      <th data-label="Department">Department</th>
+                      <th data-label="Program">Program</th>
+                      <th data-label="Request Date">Request Date</th>
+                      <th data-label="Request Purpose">Request Purpose</th>
+                      <th data-label="Specific Type">Specific Type</th>
+                      <th data-label="Date Delivered">Date Delivered</th>
+                      <th data-label="Image Upload">Image Upload</th>
+                      <th data-label="Image View">Image View</th>
+                      <th data-label="Actions">Actions</th>
+                      <th data-label="Download Barcode">Download Barcode</th>
                     </tr>
                   </thead>
                   <tbody>
                     {groupedItems[college].map((item) => (
                       <tr key={item.uniqueId}>
                         <td>{item.uniqueId}</td>
-                        <td>{item.itemName}</td>
+                        <td>
+                          <span 
+                            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                            onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
+                          >
+                            {item.itemName}
+                          </span>
+                        </td>
                         <td>
                           <input
                             type="number"
                             value={itemQuantities[item.requestId] || item.purchasedQuantity}
                             onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
-                            disabled={editModeId !== item.requestId}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
                         <td>
@@ -208,10 +321,10 @@ const ManageItem = () => {
                             type="number"
                             value={requestedQuantities[item.requestId] || item.requestedQuantity}
                             onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
-                            disabled={editModeId !== item.requestId}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
-                        <td>{item.supplierName}</td>
+                        <td>{item.supplierName}</td> 
                         <td>{item.category}</td>
                         <td>{item.department}</td>
                         <td>{item.program}</td>
@@ -223,51 +336,52 @@ const ManageItem = () => {
                             type="date"
                             value={dateDelivered[item.requestId] || item.dateDelivered}
                             onChange={(e) => handleDateChange(item.requestId, e.target.value)}
-                            disabled={editModeId !== item.requestId}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
                         <td>
-  <input
-    type="file"
-    onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
-    disabled={editModeId !== item.requestId}
-  />
-</td>
-                          <td>
-                            {item.image ? (
-                              <a href={item.image} target="_blank" rel="noopener noreferrer">
-                                View Image
-                              </a>
-                            ) : (
-                              <span>No Image</span>
-                            )}
-                          </td>
-                          <td>
-                            {editModeId === item.requestId ? (
-                              <button onClick={() => handleUpdate(item.requestId)}>Save</button>
-                            ) : (
-                              <button onClick={() => handleEditToggle(item)}>Edit</button>
-                            )}
-                            <button onClick={() => handleDelete(item.requestId)} disabled={item.isApproved}>
-                              Delete
-                            </button>
-                          </td>
-                          <td>
-                            <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          searchQuery && <p>No items match your search criteria.</p>
-        )}
-      </div>
-    );
-  };
-  
-  export default ManageItem;
+                          <input
+                            type="file"
+                            onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
+                            disabled={!editMode[item.requestId]}
+                          />
+                        </td>
+                        <td>
+                          {item.image ? (
+                            <a href={item.image} target="_blank" rel="noopener noreferrer">
+                              View Image
+                            </a>
+                          ) : (
+                            <span>No Image</span>
+                          )}
+                        </td>
+                        <td>
+                          {editMode[item.requestId] ? (
+                            <button onClick={() => handleUpdate(item.requestId)}>Save</button>
+                          ) : (
+                            <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                          )}
+                          <button 
+                            onClick={() => handleDelete(item.requestId)} 
+                            disabled={item.isApproved}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                        <td>
+                          <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ManageItem;
