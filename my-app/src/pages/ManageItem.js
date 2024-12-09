@@ -4,6 +4,7 @@ import { db, storage } from '../firebase/firebase-config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './ManageItem.css';
 import JsBarcode from 'jsbarcode';
+import WebcamCapture from './WebcamCapture'; // Import the WebcamCapture component
 
 const ManageItem = () => {
   const [items, setItems] = useState([]);
@@ -15,6 +16,7 @@ const ManageItem = () => {
   const [editMode, setEditMode] = useState({});
   const [visibleSections, setVisibleSections] = useState({});
 
+  // Fetch items from Firestore
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
     const unsubscribe = onSnapshot(requestCollection, (snapshot) => {
@@ -29,7 +31,7 @@ const ManageItem = () => {
 
   const flattenedItems = items.flatMap((request) =>
     Array.isArray(request.itemName) ? request.itemName.map((item, index) => ({
-      uniqueId: `${request.uniqueId}-${index + 1}`,  // Append batch number to the uniqueId
+      uniqueId: `${request.uniqueId}-${index + 1}`, // Append index to unique ID
       itemName: item.name,
       purchasedQuantity: item.purchasedQuantity || 0,
       requestedQuantity: item.quantity || 0,
@@ -45,7 +47,7 @@ const ManageItem = () => {
       dateDelivered: request.dateDelivered || '',
       image: request.image || null,
       isApproved: request.approved || false,
-    })) : [] // Fallback to an empty array if itemName is not an array
+    })) : []
   );
 
   const downloadBarcode = (uniqueId, itemName) => {
@@ -84,39 +86,45 @@ const ManageItem = () => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       await deleteDoc(requestRef);
     }
+  };  
+
+  const handleDateChange = (id, date) => {
+    setDateDelivered((prev) => ({ ...prev, [id]: date }));
   };
 
-  const handleDateChange = (uniqueId, date) => {
-    setDateDelivered((prev) => ({ ...prev, [uniqueId]: date }));
+  const handleQuantityChange = (id, quantity) => {
+    setItemQuantities((prev) => ({ ...prev, [id]: quantity }));
   };
 
-  const handleQuantityChange = (uniqueId, quantity) => {
-    setItemQuantities((prev) => ({ ...prev, [uniqueId]: quantity }));
+  const handleRequestedQuantityChange = (id, quantity) => {
+    setRequestedQuantities((prev) => ({ ...prev, [id]: quantity }));
   };
 
-  const handleRequestedQuantityChange = (uniqueId, quantity) => {
-    setRequestedQuantities((prev) => ({ ...prev, [uniqueId]: quantity }));
+  const handleImageChange = (id, file) => {
+    setImageFiles((prev) => ({ ...prev, [id]: file }));
   };
 
-  const handleImageChange = (uniqueId, file) => {
-    setImageFiles((prev) => ({ ...prev, [uniqueId]: file }));
+  const handleEditToggle = (id) => {
+    setEditMode((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleEditToggle = (uniqueId) => {
-    setEditMode((prev) => ({
-      ...prev,
-      [uniqueId]: !prev[uniqueId], // Toggle only the specific uniqueId's edit mode
-    }));
-  };
+  const handleUpdate = async (uniqueId, itemName) => {
+ 
+    const requestToUpdate = flattenedItems.find(item => item.uniqueId === uniqueId && item.itemName === itemName);
+    
+    if (!requestToUpdate) {
+      alert("Item not found for update.");
+      return;
+    }
 
-  const handleUpdate = async (id) => {
-    const requestRef = doc(db, 'requests', id);
+    const requestRef = doc(db, 'requests', requestToUpdate.requestId);
     let imageUrl = null;
 
-    if (imageFiles[id]) {
+    // Handle image upload if a new image file is provided
+    if (imageFiles[requestToUpdate.requestId]) {
       try {
-        const storageRef = ref(storage, `images/${imageFiles[id].name}`);
-        await uploadBytes(storageRef, imageFiles[id]);
+        const storageRef = ref(storage, `images/${imageFiles[requestToUpdate.requestId].name}`);
+        await uploadBytes(storageRef, imageFiles[requestToUpdate.requestId]);
         imageUrl = await getDownloadURL(storageRef);
       } catch (error) {
         console.error("Error uploading image:", error);
@@ -124,18 +132,20 @@ const ManageItem = () => {
       }
     }
 
+    // Update the document in Firestore
     await updateDoc(requestRef, {
-      dateDelivered: dateDelivered[id] || null,
-      purchasedQuantity: itemQuantities[id] || null,
-      requestedQuantity: requestedQuantities[id] || null,
+      dateDelivered: dateDelivered[requestToUpdate.requestId] || null,
+      purchasedQuantity: itemQuantities[requestToUpdate.requestId] || null,
+      requestedQuantity: requestedQuantities[requestToUpdate.requestId] || null,
       image: imageUrl || null,
     });
 
-    setDateDelivered((prev) => ({ ...prev, [id]: '' }));
-    setItemQuantities((prev) => ({ ...prev, [id]: null }));
-    setRequestedQuantities((prev) => ({ ...prev, [id]: null }));
-    setImageFiles((prev) => ({ ...prev, [id]: null }));
-    setEditMode((prev) => ({ ...prev, [id]: false }));
+    // Reset the state for the updated item
+    setDateDelivered((prev) => ({ ...prev, [requestToUpdate.requestId]: '' }));
+    setItemQuantities((prev) => ({ ...prev, [requestToUpdate.requestId]: null }));
+    setRequestedQuantities((prev) => ({ ...prev, [requestToUpdate.requestId]: null }));
+    setImageFiles((prev) => ({ ...prev, [requestToUpdate.requestId]: null }));
+    setEditMode((prev) => ({ ...prev, [requestToUpdate.requestId]: false }));
   };
 
   const filteredItems = flattenedItems.filter(item => 
@@ -149,15 +159,6 @@ const ManageItem = () => {
 
   const toggleVisibility = (college) => {
     setVisibleSections((prev) => ({ ...prev, [college]: !prev[college] }));
-  };
-
-  const isUpdateButtonDisabled = (uniqueId) => {
-    const dateFilled = dateDelivered[uniqueId];
-    const quantityFilled = itemQuantities[uniqueId] && itemQuantities[uniqueId] > 0;
-    const requestedQuantityFilled = requestedQuantities[uniqueId] && requestedQuantities[uniqueId] > 0;
-    const imageFilled = imageFiles[uniqueId];
-
-    return !(dateFilled && quantityFilled && requestedQuantityFilled && imageFilled);
   };
 
   return (
@@ -176,22 +177,22 @@ const ManageItem = () => {
           <table>
             <thead>
               <tr>
-                <th>Unique ID</th>
-                <th>Item Name</th>
-                <th>Delivered Quantity</th>
-                <th>Requested Quantity</th>
-                <th>Supplier Name</th>
-                <th>Category</th>
-                <th>Department</th>
-                <th>Program</th>
-                <th>Request Date</th>
-                <th>Request Purpose</th>
-                <th>Specific Type</th>
-                <th>Date Delivered</th>
-                <th>Image Upload</th>
-                <th>Image View</th>
-                <th>Actions</th>
-                <th>Download Barcode</th>
+                <th data-label="Unique ID">Unique ID</th>
+                <th data-label="Item Name">Item Name</th>
+                <th data-label="Requested Quantity">Requested Quantity</th>
+                <th data-label="Delivered Quantity">Delivered Quantity</th>
+                <th data-label="Supplier Name">Supplier Name</th>
+                <th data-label="Category">Category</th>
+                <th data-label="Department">Department</th>
+                <th data-label="Program">Program</th>
+                <th data-label="Request Date">Request Date</th>
+                <th data-label="Request Purpose">Request Purpose</th>
+                <th data-label="Specific Type">Specific Type</th>
+                <th data-label="Date Delivered">Date Delivered</th>
+                <th data-label="Image Upload">Image Upload</th>
+                <th data-label="Image View">Image View</th>
+                <th data-label="Actions">Actions</th>
+                <th data-label="Download Barcode">Download Barcode</th>
               </tr>
             </thead>
             <tbody>
@@ -199,8 +200,8 @@ const ManageItem = () => {
                 <tr key={item.uniqueId}>
                   <td>{item.uniqueId}</td>
                   <td>
-                    <span
-                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
+                    <span 
+                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
                       onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
                     >
                       {item.itemName}
@@ -209,17 +210,17 @@ const ManageItem = () => {
                   <td>
                     <input
                       type="number"
-                      value={itemQuantities[item.uniqueId] || item.purchasedQuantity}
-                      onChange={(e) => handleQuantityChange(item.uniqueId, e.target.value)}
-                      disabled={!editMode[item.uniqueId]}
+                      value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                      onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
                     />
                   </td>
                   <td>
                     <input
                       type="number"
-                      value={requestedQuantities[item.uniqueId] || item.requestedQuantity}
-                      onChange={(e) => handleRequestedQuantityChange(item.uniqueId, e.target.value)}
-                      disabled={!editMode[item.uniqueId]}
+                      value={itemQuantities[item.requestId] || item.purchasedQuantity}
+                      onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
                     />
                   </td>
                   <td>{item.supplierName}</td>
@@ -232,16 +233,24 @@ const ManageItem = () => {
                   <td>
                     <input
                       type="date"
-                      value={dateDelivered[item.uniqueId] || item.dateDelivered}
-                      onChange={(e) => handleDateChange(item.uniqueId, e.target.value)}
-                      disabled={!editMode[item.uniqueId]}
+                      value={dateDelivered[item.requestId] || item.dateDelivered}
+                      onChange={(e) => handleDateChange(item.requestId, e.target.value)}
+                      disabled={!editMode[item.requestId]}
                     />
                   </td>
                   <td>
+                    {editMode[item.requestId] && (
+                      <WebcamCapture 
+                        requestId={item.requestId} 
+                        editMode={editMode[item.requestId]} 
+                        onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
+                      />
+                    )}
                     <input
                       type="file"
-                      onChange={(e) => handleImageChange(item.uniqueId, e.target.files[0])}
-                      disabled={!editMode[item.uniqueId]}
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
+                      disabled={!editMode[item.requestId]}
                     />
                   </td>
                   <td>
@@ -250,20 +259,21 @@ const ManageItem = () => {
                         View Image
                       </a>
                     ) : (
-                      'No Image'
+                      <span>No Image</span>
                     )}
                   </td>
                   <td>
-                    <button onClick={() => handleEditToggle(item.uniqueId)}>
-                      {editMode[item.uniqueId] ? 'Cancel' : 'Edit'}
-                    </button>
-                    <button
-                      onClick={() => handleUpdate(item.requestId)}
-                      disabled={isUpdateButtonDisabled(item.uniqueId)}
+                    {editMode[item.requestId] ? (
+                      <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
+                    ) : (
+                      <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                    )}
+                    <button 
+                      onClick={() => handleDelete(item.requestId)} 
+                      disabled={item.isApproved}
                     >
-                      Update
+                      Delete
                     </button>
-                    <button onClick={() => handleDelete(item.requestId)}>Delete</button>
                   </td>
                   <td>
                     <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
@@ -274,54 +284,64 @@ const ManageItem = () => {
           </table>
         </div>
       ) : (
-        Object.keys(groupedItems).map((college) => (
-          <div key={college}>
-            <button onClick={() => toggleVisibility(college)}>
-              {visibleSections[college] ? 'Hide' : 'Show'} {college} Items
-            </button>
-            {visibleSections[college] && (
-              <div>
-                <h2>{college}</h2>
+        searchQuery && <p>No items match your search criteria.</p>
+      )}
+      {searchQuery === '' && Object.keys(groupedItems).length > 0 && (
+        <div>
+          <h2>All Items:</h2>
+          {Object.keys(groupedItems).map((college) => (
+            <div key={college}>
+              <h2 onClick={() => toggleVisibility(college)} style={{ cursor: 'pointer' }}>
+                {college} Items {visibleSections[college] ? '▼' : '▲'}
+              </h2>
+              {visibleSections[college] && (
                 <table>
                   <thead>
                     <tr>
-                      <th>Unique ID</th>
-                      <th>Item Name</th>
-                      <th>Delivered Quantity</th>
-                      <th>Requested Quantity</th>
-                      <th>Supplier Name</th>
-                      <th>Category</th>
-                      <th>Department</th>
-                      <th>Program</th>
-                      <th>Request Date</th>
-                      <th>Request Purpose</th>
-                      <th>Specific Type</th>
-                      <th>Date Delivered</th>
-                      <th>Image Upload</th>
-                      <th>Image View</th>
-                      <th>Actions</th>
-                      <th>Download Barcode</th>
+                      <th data-label="Unique ID">Unique ID</th>
+                      <th data-label="Item Name">Item Name</th>
+                      <th data-label="Requested Quantity">Requested Quantity</th>
+                      <th data-label="Delivered Quantity">Delivered Quantity</th>
+                      <th data-label="Supplier Name">Supplier Name</th>
+                      <th data-label="Category">Category</th>
+                      <th data-label="Department">Department</th>
+                      <th data-label="Program">Program</th>
+                      <th data-label="Request Date">Request Date</th>
+                      <th data-label="Request Purpose">Request Purpose</th>
+                      <th data-label="Specific Type">Specific Type</th>
+                      <th data-label="Date Delivered">Date Delivered</th>
+                      <th data-label="Image Upload">Image Upload</th>
+                      <th data-label="Image View">Image View</th>
+                      <th data-label="Actions">Actions</th>
+                      <th data-label="Download Barcode">Download Barcode</th>
                     </tr>
                   </thead>
                   <tbody>
                     {groupedItems[college].map((item) => (
                       <tr key={item.uniqueId}>
                         <td>{item.uniqueId}</td>
-                        <td>{item.itemName}</td>
+                        <td>
+                          <span 
+                            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                            onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
+                          >
+                            {item.itemName}
+                          </span>
+                        </td>
                         <td>
                           <input
                             type="number"
-                            value={itemQuantities[item.uniqueId] || item.purchasedQuantity}
-                            onChange={(e) => handleQuantityChange(item.uniqueId, e.target.value)}
-                            disabled={!editMode[item.uniqueId]}
+                            value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                            onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
                         <td>
                           <input
                             type="number"
-                            value={requestedQuantities[item.uniqueId] || item.requestedQuantity}
-                            onChange={(e) => handleRequestedQuantityChange(item.uniqueId, e.target.value)}
-                            disabled={!editMode[item.uniqueId]}
+                            value={itemQuantities[item.requestId] || item.purchasedQuantity}
+                            onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
                         <td>{item.supplierName}</td>
@@ -334,16 +354,24 @@ const ManageItem = () => {
                         <td>
                           <input
                             type="date"
-                            value={dateDelivered[item.uniqueId] || item.dateDelivered}
-                            onChange={(e) => handleDateChange(item.uniqueId, e.target.value)}
-                            disabled={!editMode[item.uniqueId]}
+                            value={dateDelivered[item.requestId] || item.dateDelivered}
+                            onChange={(e) => handleDateChange(item.requestId, e.target.value)}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
                         <td>
+                          {editMode[item.requestId] && (
+                            <WebcamCapture 
+                              requestId={item.requestId} 
+                              editMode={editMode[item.requestId]} 
+                              onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
+                            />
+                          )}
                           <input
                             type="file"
-                            onChange={(e) => handleImageChange(item.uniqueId, e.target.files[0])}
-                            disabled={!editMode[item.uniqueId]}
+                            accept="image/*"
+                            onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
+                            disabled={!editMode[item.requestId]}
                           />
                         </td>
                         <td>
@@ -352,20 +380,21 @@ const ManageItem = () => {
                               View Image
                             </a>
                           ) : (
-                            'No Image'
+                            <span>No Image</span>
                           )}
                         </td>
                         <td>
-                          <button onClick={() => handleEditToggle(item.uniqueId)}>
-                            {editMode[item.uniqueId] ? 'Cancel' : 'Edit'}
-                          </button>
-                          <button
-                            onClick={() => handleUpdate(item.requestId)}
-                            disabled={isUpdateButtonDisabled(item.uniqueId)}
+                          {editMode[item.requestId] ? (
+                            <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
+                          ) : (
+                            <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                          )}
+                          <button 
+                            onClick={() => handleDelete(item.requestId)} 
+                            disabled={item.isApproved}
                           >
-                            Update
+                            Delete
                           </button>
-                          <button onClick={() => handleDelete(item.requestId)}>Delete</button>
                         </td>
                         <td>
                           <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
@@ -374,13 +403,13 @@ const ManageItem = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
-          </div>
-        ))
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 };
 
-export default ManageItem; 
+export default ManageItem;
