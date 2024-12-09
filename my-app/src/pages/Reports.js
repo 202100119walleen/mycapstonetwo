@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase/firebase-config'; 
+import { db } from '../firebase/firebase-config'; // Adjust the import based on your project structure
+import './Reports.css'; // Import the CSS file
 
-const Reports = () => {
+const ReportPage = () => {
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [loading, setLoading] = useState(true); // Loading state
 
+  // Fetch requests from Firestore on component mount
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
     const unsubscribe = onSnapshot(requestCollection, (snapshot) => {
@@ -15,112 +19,103 @@ const Reports = () => {
         ...doc.data(),
       }));
       setRequests(fetchedRequests);
-      setLoading(false);
+      setLoading(false); // Set loading to false after data is fetched
     }, (error) => {
       console.error("Error fetching requests: ", error);
-      setError("Failed to fetch requests.");
-      setLoading(false);
+      setLoading(false); // Set loading to false on error
     });
-
-    return () => unsubscribe();
+    return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
 
-  const categorizeRequests = () => {
-    const categorized = {
-      requested: [],
-      purchased: [],
-      notPurchased: [],
-    };
+  // Handle input changes
+  const handleSearchChange = (e) => setSearchTerm(e.target.value);
 
-    requests.forEach(request => {
-      if (Array.isArray(request.itemName)) {
-        request.itemName.forEach(item => {
-          const itemRequested = parseInt(item.quantity || 0, 10);
-          const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
-          const finalNotPurchased = itemRequested - itemPurchased;
-
-          if (itemRequested > 0) {
-            categorized.requested.push({ ...request, item });
-          }
-          if (itemPurchased > 0) {
-            categorized.purchased.push({ ...request, item });
-          }
-          if (finalNotPurchased > 0) {
-            categorized.notPurchased.push({ ...request, item });
-          }
-        });
-      }
-    });
-
-    return categorized;
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStartDate('');
+    setEndDate('');
   };
 
-  const categorizedRequests = categorizeRequests();
+  // Filter requests based on the unified search criteria
+  const filteredRequests = () => {
+    return requests.filter(request => {
+      const requestDate = new Date(request.requestDate);
+      const matchesSearchTerm = 
+        (request.uniqueId && request.uniqueId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (request.college && request.college.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (request.department && request.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (request.nonAcademicField && request.nonAcademicField.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  if (loading) {
-    return <p>Loading requests...</p>;
-  }
+      const matchesDateRange = 
+        (!startDate || requestDate >= new Date(startDate)) && 
+        (!endDate || requestDate <= new Date(endDate));
 
-  if (error) {
-    return <p>{error}</p>;
-  }
+      return matchesSearchTerm && matchesDateRange;
+    });
+  };
+
+  // Render requests
+  const renderRequests = (requestsToRender) => {
+    return requestsToRender.map((request) => (
+      <li key={request.id}>
+        <p>
+          <strong>Unique ID:</strong> {request.uniqueId} 
+          <button onClick={() => navigator.clipboard.writeText(request.uniqueId)}>Copy</button>
+        </p>
+        <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+        <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+        <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
+        <p><strong>Category:</strong> {request.category}</p>
+        <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
+        <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
+        <p><strong>Requested Quantity:</strong> {request.quantity || 0}</p>
+        <p><strong>Purchased Quantity:</strong> {request.purchasedQuantity || 0}</p>
+        <p>
+          <strong>Not Purchased Quantity:</strong> 
+          {Math.max(0, (request.quantity || 0) - (request.purchasedQuantity || 0))}
+        </p>
+      </li>
+    ));
+  };
 
   return (
-    <div className="reports">
-      <h1>Reports</h1>
-
-      <h2>Requested Items</h2>
-      {categorizedRequests.requested.length > 0 ? (
-        <ul>
-          {categorizedRequests.requested.map((request) => (
-            <li key={request.id}>
-              <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-              <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-              <p><strong>Item Name:</strong> {request.item?.name || 'N/A'}</p>
-              <p><strong>Quantity Requested:</strong> {request.item?.quantity || 0}</p>
-              <p><strong>Unique ID:</strong> {request.uniqueId}</p>
-            </li>
-          ))}
-        </ul>
+    <div className="report-page">
+      <h1>Report of Requests</h1>
+      {loading ? (
+        <p>Loading requests...</p>
       ) : (
-        <p>No requested items found.</p>
-      )}
-
-      <h2>Purchased Items</h2>
-      {categorizedRequests.purchased.length > 0 ? (
-        <ul>
-          {categorizedRequests.purchased.map((request) => (
-            <li key={request.id}>
-              <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-              <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-              <p><strong>Item Name:</strong> {request.item?.name || 'N/A'}</p>
-              <p><strong>Quantity Purchased:</strong> {request.item?.purchasedQuantity || 0}</p>
-              <p><strong>Unique ID:</strong> {request.uniqueId}</p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No purchased items found.</p>
-      )}
-
-      <h2>Not Purchased Items</h2>
-      {categorizedRequests.notPurchased.length > 0 ? (
-        <ul>
-          {categorizedRequests.notPurchased.map((request) => (
-            <li key={request.id}>
-              <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
- <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-              <p><strong>Item Name:</strong> {request.item?.name || 'N/A'}</p>
-              <p><strong>Quantity Not Purchased:</strong> {request.item?.quantity - request.item?.purchasedQuantity || 0}</p>
-              <p><strong>Unique ID:</strong> {request.uniqueId}</p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No items not purchased found.</p>
+        <>
+          <input 
+            type="text" 
+            placeholder="Search by Unique ID, College, Department, or Non-Academic" 
+            value={searchTerm} 
+            onChange={handleSearchChange} 
+          />
+          <div className="date-filters">
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+            />
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange ={(e) => setEndDate(e.target.value)} 
+            />
+          </div>
+          <button onClick={clearFilters}>Clear Filters</button>
+          <ul>
+            {filteredRequests().length > 0 ? (
+              renderRequests(filteredRequests())
+            ) : (
+              <p>No requests found.</p>
+            )}
+          </ul>
+        </>
       )}
     </div>
   );
 };
 
-export default Reports;
+export default ReportPage;
