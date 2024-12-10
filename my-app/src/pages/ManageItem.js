@@ -290,11 +290,12 @@ const ManageItem = () => {
         <div>
           <h2>All Items:</h2>
           {Object.keys(groupedItems).map((college) => (
-            <div key={college}>
+            <div  key={college}>
               <h2 onClick={() => toggleVisibility(college)} style={{ cursor: 'pointer' }}>
                 {college} Items {visibleSections[college] ? '▼' : '▲'}
               </h2>
               {visibleSections[college] && (
+                
                 <table>
                   <thead>
                     <tr>

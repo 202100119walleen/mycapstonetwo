@@ -56,28 +56,50 @@ const ReportPage = () => {
   };
 
   // Render requests
-  const renderRequests = (requestsToRender) => {
-    return requestsToRender.map((request) => (
-      <li key={request.id}>
-        <p>
-          <strong>Unique ID:</strong> {request.uniqueId} 
-          <button onClick={() => navigator.clipboard.writeText(request.uniqueId)}>Copy</button>
-        </p>
-        <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-        <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-        <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
-        <p><strong>Category:</strong> {request.category}</p>
-        <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
-        <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
-        <p><strong>Requested Quantity:</strong> {request.quantity || 0}</p>
-        <p><strong>Purchased Quantity:</strong> {request.purchasedQuantity || 0}</p>
-        <p>
-          <strong>Not Purchased Quantity:</strong> 
-          {Math.max(0, (request.quantity || 0) - (request.purchasedQuantity || 0))}
-        </p>
-      </li>
-    ));
-  };
+  // Inside your renderRequests function in ReportPage
+const renderRequests = (requestsToRender) => {
+  return requestsToRender.map((request) => (
+    <li key={request.id}>
+      <p>
+        <strong>Unique ID:</strong> {request.uniqueId} 
+        <button onClick={() => navigator.clipboard.writeText(request.uniqueId)}>Copy</button>
+      </p>
+      <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+      <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+      <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
+      <p><strong>Category:</strong> {request.category}</p>
+      <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
+      <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
+      
+     
+      
+      {/* Displaying items requested */}
+      <div>
+        <strong>Items Requested:</strong>
+        <ul>
+          {request.itemName && request.itemName.length > 0 ? (
+            request.itemName.map((item, index) => {
+              const itemRequested = parseInt(item.quantity || 0, 10);
+              const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
+              const finalNotPurchased = itemRequested - itemPurchased;
+
+              return (
+                <li key={index}>
+                  {item.name} - 
+                  <span> {itemRequested} requested,</span> 
+                  <span> {itemPurchased} purchased,</span> 
+                  <span> {finalNotPurchased} not purchased</span>
+                </li>
+              );
+            })
+          ) : (
+            <li>No items requested.</li>
+          )}
+        </ul>
+      </div>
+    </li>
+  ));
+};  
 
   return (
     <div className="report-page">
@@ -101,7 +123,7 @@ const ReportPage = () => {
             <input 
               type="date" 
               value={endDate} 
-              onChange ={(e) => setEndDate(e.target.value)} 
+              onChange={(e) => setEndDate(e.target.value)} 
             />
           </div>
           <button onClick={clearFilters}>Clear Filters</button>
