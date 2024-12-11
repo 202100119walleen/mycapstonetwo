@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'; 
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/firebase-config';
-import { db, storage } from '../firebase/firebase-config'; // Ensure db is imported
+import { db, storage } from '../firebase/firebase-config'; 
 import { collection, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -12,33 +12,21 @@ const DashboardPage = () => {
   const [categoryItemCounts, setCategoryItemCounts] = useState({ nonAcademic: 0, academic: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [totalApprovedRequests, setTotalApprovedRequests] = useState(0); // Track total approved requests
+  const [totalApprovedRequests, setTotalApprovedRequests] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [profileImage, setProfileImage] = useState('userdashboard.png'); // Default profile image
+  const [profileImage, setProfileImage] = useState('userdashboard.png');
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const userName = "Admin";
 
   useEffect(() => {
-    // Fetch total items and group by category (Non Academic, Academic)
+    // Fetch total items
     const itemsCollection = collection(db, 'items');
     const unsubscribeItems = onSnapshot(itemsCollection, (snapshot) => {
       const items = snapshot.docs.map(doc => doc.data());
       setTotalItems(items.length);
-
-      const categoryMap = { nonAcademic: 0, academic: 0 };
-
-      items.forEach(item => {
-        if (item.category === "Non Academic") {
-          categoryMap.nonAcademic += 1;
-        } else if (item.category === "Academic") {
-          categoryMap.academic += 1;
-        }
-      });
-
-      setCategoryItemCounts(categoryMap);
       setLoading(false);
     }, (error) => {
       setError(error.message);
@@ -48,8 +36,23 @@ const DashboardPage = () => {
     // Fetch approved requests
     const requestsCollection = collection(db, 'requests');
     const unsubscribeRequests = onSnapshot(requestsCollection, (snapshot) => {
-      const totalApproved = snapshot.docs.filter(doc => doc.data().approved).length;
-      setTotalApprovedRequests(totalApproved); // Set total approved requests
+      const requests = snapshot.docs.map(doc => doc.data());
+      const totalApproved = requests.filter(request => request.approved).length;
+      setTotalApprovedRequests(totalApproved);
+
+      const categoryMap = { nonAcademic: 0, academic: 0 };
+      requests.forEach(request => {
+        if (request.approved) {
+          if (request.college === "Non Academic") {
+            categoryMap.nonAcademic += request.itemName.reduce((sum, item) => sum + (item.purchasedQuantity || 0), 0);
+          } else if (request.college === "Academic") {
+            // Count total requested items for the Academic category
+            categoryMap.academic += request.itemName.reduce((sum, item) => sum + (item.quantity || 0), 0);
+          }
+        }
+      });
+
+      setCategoryItemCounts(categoryMap);
     }, (error) => {
       setError(error.message);
     });
@@ -82,7 +85,6 @@ const DashboardPage = () => {
   };
 
   const handleImageClick = () => {
-    // Trigger file input when the image is clicked
     fileInputRef.current.click();
   };
 
@@ -93,7 +95,7 @@ const DashboardPage = () => {
       uploadBytes(storageRef, file)
         .then(() => getDownloadURL(storageRef))
         .then((url) => {
-          setProfileImage(url); // Set the new profile image
+          setProfileImage(url);
         })
         .catch((error) => {
           console.error("Error uploading profile image:", error);
@@ -113,7 +115,7 @@ const DashboardPage = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <h2>Admin Dashboard</h2>
-        <div className="search-and-profile">
+        <div className="search -and-profile">
           <input
             type="text"
             placeholder="Search categories..."
@@ -122,7 +124,6 @@ const DashboardPage = () => {
             onChange={handleSearchChange}
           />
           <div className="profile">
-            {/* Profile Image that can be clicked to change */}
             <img
               src={profileImage}
               alt="Profile Icon"
@@ -130,8 +131,7 @@ const DashboardPage = () => {
               onClick={handleImageClick}
               style={{ cursor: 'pointer' }}
             />
-            <input
-              type="file"
+            <input type="file"
               ref={fileInputRef}
               style={{ display: 'none' }}
               onChange={handleImageUpload}
@@ -159,7 +159,6 @@ const DashboardPage = () => {
             </Link>
           </div>
 
-          {/* Non Academic Folder */}
           <div className="card folder-card">
             <Link to="/manage-item" className="link">
               <h3>Non Academic</h3>
@@ -174,7 +173,6 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Academic Folder */}
           <div className="card folder-card">
             <Link to="/manage-item" className="link">
               <h3>Academic</h3>
@@ -189,12 +187,11 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Approved Purchase Requests */}
           <div className="card approve-request-card">
             <Link to="/approve-request" className="link">
               <h3>PURCHASED REQUEST</h3>
             </Link>
-            <p>Total Approved Requests: {totalApprovedRequests}</p> {/* Display total approved requests */}
+            <p>Total Approved Requests: {totalApprovedRequests}</p>
           </div>
         </section>
       </main>

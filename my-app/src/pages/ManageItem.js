@@ -4,7 +4,7 @@ import { db, storage } from '../firebase/firebase-config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import './ManageItem.css';
 import JsBarcode from 'jsbarcode';
-import WebcamCapture from './WebcamCapture'; // Import the WebcamCapture component
+import WebcamCapture from './WebcamCapture';
 
 const ManageItem = () => {
   const [items, setItems] = useState([]);
@@ -108,8 +108,7 @@ const ManageItem = () => {
     setEditMode((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleUpdate = async (uniqueId, itemName) => {
- 
+  const handleUpdate = async (uniqueId,itemName) => {
     const requestToUpdate = flattenedItems.find(item => item.uniqueId === uniqueId && item.itemName === itemName);
     
     if (!requestToUpdate) {
@@ -154,8 +153,17 @@ const ManageItem = () => {
     item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.college.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.program.toLowerCase().includes(searchQuery.toLowerCase())
+    item.program.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.uniqueId.toLowerCase().includes(searchQuery.toLowerCase()) // Added unique ID search
   );
+
+  const copyToClipboard = (uniqueId) => {
+    navigator.clipboard.writeText(uniqueId).then(() => {
+      alert("Unique ID copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy: ", err);
+    });
+  };
 
   const toggleVisibility = (college) => {
     setVisibleSections((prev) => ({ ...prev, [college]: !prev[college] }));
@@ -166,7 +174,7 @@ const ManageItem = () => {
       <h1>Manage Item</h1>
       <input
         type="text"
-        placeholder="Search Colleges, Departments, Category, Item Name"
+        placeholder="Search Colleges, Departments, Category, Item Name, or Unique ID"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         className="search-barmanage"
@@ -198,7 +206,14 @@ const ManageItem = () => {
             <tbody>
               {filteredItems.map((item) => (
                 <tr key={item.uniqueId}>
-                  <td>{item.uniqueId}</td>
+                  <td>
+                    <span 
+                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                      onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
+                    >
+                      {item.uniqueId}
+                    </span>
+                  </td>
                   <td>
                     <span 
                       style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
@@ -290,12 +305,11 @@ const ManageItem = () => {
         <div>
           <h2>All Items:</h2>
           {Object.keys(groupedItems).map((college) => (
-            <div  key={college}>
+            <div key={college}>
               <h2 onClick={() => toggleVisibility(college)} style={{ cursor: 'pointer' }}>
                 {college} Items {visibleSections[college] ? '▼' : '▲'}
               </h2>
               {visibleSections[college] && (
-                
                 <table>
                   <thead>
                     <tr>
@@ -313,14 +327,21 @@ const ManageItem = () => {
                       <th data-label="Date Delivered">Date Delivered</th>
                       <th data-label="Image Upload">Image Upload</th>
                       <th data-label="Image View">Image View</th>
-                      <th data-label="Actions">Actions</th>
+                      <th data-label="Actions"> Actions</th>
                       <th data-label="Download Barcode">Download Barcode</th>
                     </tr>
                   </thead>
                   <tbody>
                     {groupedItems[college].map((item) => (
                       <tr key={item.uniqueId}>
-                        <td>{item.uniqueId}</td>
+                        <td>
+                          <span 
+                            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                            onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
+                          >
+                            {item.uniqueId}
+                          </span>
+                        </td>
                         <td>
                           <span 
                             style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 

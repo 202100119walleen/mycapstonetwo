@@ -45,6 +45,7 @@ const ReportPage = () => {
         (request.uniqueId && request.uniqueId.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (request.college && request.college.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (request.department && request.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (request.category && request.category.toLowerCase().includes(searchTerm.toLowerCase())) || // Added category search
         (request.nonAcademicField && request.nonAcademicField.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesDateRange = 
@@ -55,51 +56,63 @@ const ReportPage = () => {
     });
   };
 
-  // Render requests
-  // Inside your renderRequests function in ReportPage
-const renderRequests = (requestsToRender) => {
-  return requestsToRender.map((request) => (
-    <li key={request.id}>
-      <p>
-        <strong>Unique ID:</strong> {request.uniqueId} 
-        <button onClick={() => navigator.clipboard.writeText(request.uniqueId)}>Copy</button>
-      </p>
-      <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
-      <p><strong>Supplier Name:</strong> {request.supplierName}</p>
-      <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
-      <p><strong>Category:</strong> {request.category}</p>
-      <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
-      <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
-      
-     
-      
-      {/* Displaying items requested */}
-      <div>
-        <strong>Items Requested:</strong>
-        <ul>
-          {request.itemName && request.itemName.length > 0 ? (
-            request.itemName.map((item, index) => {
-              const itemRequested = parseInt(item.quantity || 0, 10);
-              const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
-              const finalNotPurchased = itemRequested - itemPurchased;
+  // Copy unique ID to clipboard
+  const copyToClipboard = (uniqueId) => {
+    navigator.clipboard.writeText(uniqueId).then(() => {
+      alert("Unique ID copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy: ", err);
+    });
+  };
 
-              return (
-                <li key={index}>
-                  {item.name} - 
-                  <span> {itemRequested} requested,</span> 
-                  <span> {itemPurchased} purchased,</span> 
-                  <span> {finalNotPurchased} not purchased</span>
-                </li>
-              );
-            })
-          ) : (
-            <li>No items requested.</li>
-          )}
-        </ul>
-      </div>
-    </li>
-  ));
-};  
+  // Render requests
+  const renderRequests = (requestsToRender) => {
+    return requestsToRender.map((request) => (
+      <li key={request.id}>
+        <p>
+          <strong>Unique ID:</strong> 
+          <span 
+            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+            onClick={() => copyToClipboard(request.uniqueId)} // Copy unique ID to clipboard
+          >
+            {request.uniqueId}
+          </span>
+        </p>
+        <p><strong>Request Purpose:</strong> {request.requestPurpose}</p>
+        <p><strong>Supplier Name:</strong> {request.supplierName}</p>
+        <p><strong>Request Date:</strong> {new Date(request.requestDate).toLocaleDateString()}</p>
+        <p><strong>Category:</strong> {request.category || 'N/A'}</p>
+        <p><strong>Specific Type:</strong> {request.specificType || 'N/A'}</p>
+        <p><strong>Department:</strong> {request.department || 'N/A'}</p>
+        <p><strong>Academic Program:</strong> {request.program || 'N/A'}</p>
+        
+        {/* Displaying items requested */}
+        <div>
+          <strong>Items Requested:</strong>
+          <ul>
+            {request.itemName && request.itemName.length > 0 ? (
+              request.itemName.map((item, index) => {
+                const itemRequested = parseInt(item.quantity || 0, 10);
+                const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
+                const finalNotPurchased = itemRequested - itemPurchased;
+
+                return (
+                  <li key={index}>
+                    {item.name} - 
+                    <span> {itemRequested} requested,</span> 
+                    <span> {itemPurchased} purchased,</span> 
+                    <span> {finalNotPurchased} not purchased</span>
+                  </li>
+                );
+              })
+            ) : (
+              <li>No items requested.</li>
+            )}
+          </ul>
+        </div>
+      </li>
+    ));
+  };  
 
   return (
     <div className="report-page">
@@ -110,7 +123,7 @@ const renderRequests = (requestsToRender) => {
         <>
           <input 
             type="text" 
-            placeholder="Search by Unique ID, College, Department, or Non-Academic" 
+            placeholder="Search by Unique ID, College, Department, Category, or Non-Academic" 
             value={searchTerm} 
             onChange={handleSearchChange} 
           />

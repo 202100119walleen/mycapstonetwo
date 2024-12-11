@@ -1,11 +1,20 @@
 // src/components/Layout.js
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaTachometerAlt, FaBoxOpen, FaCheck, FaFileAlt, FaBarcode, FaCog } from 'react-icons/fa';
 import './Layout.css';
 
 const Layout = ({ children }) => {
   const location = useLocation(); // Get current URL path
+  const navigate = useNavigate(); // Use navigate for redirection
+
+  const handleLogout = () => {
+    // Perform logout logic, e.g., clearing user session
+    localStorage.removeItem('user'); // Adjust this based on your authentication method
+
+    // Redirect to the sign-in page
+    navigate('/sign-in'); // Redirect to /sign-in
+  };
 
   return (
     <div className="layout-container">
@@ -50,6 +59,10 @@ const Layout = ({ children }) => {
         >
           <FaCog className="nav-icon" /> Settings
         </Link>
+        {/* Logout Button */}
+        <button onClick={handleLogout} className="logout-button">
+          Logout
+        </button>
       </nav>
       <div className="content">
         {children}
