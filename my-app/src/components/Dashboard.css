@@ -57,17 +57,17 @@ h2 {
 }
 
 .dropdown-toggle {
-  background: none;
+  background: #660809;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  color: rgb(0, 0, 0);
+  font-size: 16px;
+  transition: transform 0.2s; /* Smooth transition for rotation */
 }
 
 /* Dropdown Menu Styles */
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: 10%;
   right: 0;
   background-color: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
