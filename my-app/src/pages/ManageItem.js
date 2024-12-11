@@ -108,7 +108,7 @@ const ManageItem = () => {
     setEditMode((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleUpdate = async (uniqueId,itemName) => {
+  const handleUpdate = async (uniqueId, itemName) => {
     const requestToUpdate = flattenedItems.find(item => item.uniqueId === uniqueId && item.itemName === itemName);
     
     if (!requestToUpdate) {
@@ -182,121 +182,120 @@ const ManageItem = () => {
       {searchQuery && filteredItems.length > 0 ? (
         <div>
           <h2>Search Results:</h2>
-          <table>
-            <thead>
-              <tr>
-                <th data-label="Unique ID">Unique ID</th>
-                <th data-label="Item Name">Item Name</th>
-                <th data-label="Requested Quantity">Requested Quantity</th>
-                <th data-label="Delivered Quantity">Delivered Quantity</th>
-                <th data-label="Supplier Name">Supplier Name</th>
-                <th data-label="Category">Category</th>
-                <th data-label="Department">Department</th>
-                <th data-label="Program">Program</th>
-                <th data-label="Request Date">Request Date</th>
-                <th data-label="Request Purpose">Request Purpose</th>
-                <th data-label="Specific Type">Specific Type</th>
-                <th data-label="Date Delivered">Date Delivered</th>
-                <th data-label="Image Upload">Image Upload</th>
-                <th data-label="Image View">Image View</th>
-                <th data-label="Actions">Actions</th>
-                <th data-label="Download Barcode">Download Barcode</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => (
-                <tr key={item.uniqueId}>
-                  <td>
-                    <span 
-                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
-                      onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
-                    >
-                      {item.uniqueId}
-                    </span>
-                  </td>
-                  <td>
-                    <span 
-                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
-                      onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
-                    >
-                      {item.itemName}
-                    </span>
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={requestedQuantities[item.requestId] || item.requestedQuantity}
-                      onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
-                      disabled={!editMode[item.requestId]}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={itemQuantities[item.requestId] || item.purchasedQuantity}
-                      onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
-                      disabled={!editMode[item.requestId]}
-                    />
-                  </td>
-                  <td>{item.supplierName}</td>
-                  <td>{item.category}</td>
-                  <td>{item.department}</td>
-                  <td>{item.program}</td>
-                  <td>{item.requestDate}</td>
-                  <td>{item.requestPurpose}</td>
-                  <td>{item.specificType}</td>
-                  <td>
-                    <input
-                      type="date"
-                      value={dateDelivered[item.requestId] || item.dateDelivered}
-                      onChange={(e) => handleDateChange(item.requestId, e.target.value)}
-                      disabled={!editMode[item.requestId]}
-                    />
-                  </td>
-                  <td>
-                    {editMode[item.requestId] && (
-                      <WebcamCapture 
-                        requestId={item.requestId} 
-                        editMode={editMode[item.requestId]} 
-                        onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
-                      />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
-                      disabled={!editMode[item.requestId]}
-                    />
-                  </td>
-                  <td>
-                    {item.image ? (
-                      <a href={item.image} target="_blank" rel="noopener noreferrer">
-                        View Image
-                      </a>
-                    ) : (
-                      <span>No Image</span>
-                    )}
-                  </td>
-                  <td>
-                    {editMode[item.requestId] ? (
-                      <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
-                    ) : (
-                      <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
-                    )}
-                    <button 
-                      onClick={() => handleDelete(item.requestId)} 
-                      disabled={item.isApproved}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                  <td>
-                    <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
-                  </td>
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th data-label="Unique ID">Unique ID</th>
+                  <th data-label="Item Name">Item Name</th>
+                  <th data-label="Requested Quantity">Requested Quantity</th>
+                  <th data-label="Delivered Quantity">Delivered Quantity</th>
+                  <th data-label="Supplier Name">Supplier Name</th>
+                  <th data-label="Category">Category</th>
+                  <th data-label="Department">Department</th>
+                  <th data-label="Program">Program</th>
+                  <th data-label="Request Date">Request Date</th>
+                  <th data-label="Request Purpose">Request Purpose</th>
+                  <th data-label="Specific Type">Specific Type</th>
+                  <th data-label="Date Delivered">Date Delivered</th>
+                  <th data-label="Image Upload">Image Upload</th>
+                  <th data-label="Actions">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredItems.map((item) => (
+                  <tr key={item.uniqueId}>
+                    <td>
+                      <span 
+                        style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
+                      >
+                        {item.uniqueId}
+                      </span>
+                    </td>
+                    <td>
+                      <span 
+                        style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                        onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
+                      >
+                        {item.itemName}
+                      </span>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                        onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
+                        disabled={!editMode[item.requestId]}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={itemQuantities[item.requestId] || item.purchasedQuantity}
+                        onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
+                        disabled={!editMode[item.requestId]}
+                      />
+                    </td>
+                    <td>{item.supplierName}</td>
+                    <td>{item.category}</td>
+                    <td>{item.department}</td>
+                    <td>{item.program}</td>
+                    <td>{item.requestDate}</td>
+                    <td>{item.requestPurpose}</td>
+                    <td>{item.specificType}</td>
+                    <td>
+                      <input
+                        type="date"
+                        value={dateDelivered[item.requestId] || item.dateDelivered}
+                        onChange={(e) => handleDateChange(item.requestId, e.target.value)}
+                        disabled={!editMode[item.requestId]}
+                      />
+                    </td>
+                    <td>
+                      {editMode[item.requestId] && (
+                        <WebcamCapture 
+                          requestId={item.requestId} 
+                          editMode={editMode[item.requestId]} 
+                          onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
+                        />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
+                        disabled={!editMode[item.requestId]}
+                      />
+                    </td>
+                    <td>
+                      <button 
+                        onClick={() => {
+                          if (item.image) {
+                            window.open(item.image, '_blank');
+                          } else {
+                            alert("No image available.");
+                          }
+                        }}
+                      >
+                        View Image
+                      </button>
+                      {editMode[item.requestId] ? (
+                        <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
+                      ) : (
+                        <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                      )}
+                      <button 
+                        onClick={() => handleDelete(item.requestId)} 
+                        disabled={item.isApproved}
+                      >
+                        Delete
+                      </button>
+                      <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         searchQuery && <p>No items match your search criteria.</p>
@@ -310,121 +309,121 @@ const ManageItem = () => {
                 {college} Items {visibleSections[college] ? '▼' : '▲'}
               </h2>
               {visibleSections[college] && (
-                <table>
-                  <thead>
-                    <tr>
-                      <th data-label="Unique ID">Unique ID</th>
-                      <th data-label="Item Name">Item Name</th>
-                      <th data-label="Requested Quantity">Requested Quantity</th>
-                      <th data-label="Delivered Quantity">Delivered Quantity</th>
-                      <th data-label="Supplier Name">Supplier Name</th>
-                      <th data-label="Category">Category</th>
-                      <th data-label="Department">Department</th>
-                      <th data-label="Program">Program</th>
-                      <th data-label="Request Date">Request Date</th>
-                      <th data-label="Request Purpose">Request Purpose</th>
-                      <th data-label="Specific Type">Specific Type</th>
-                      <th data-label="Date Delivered">Date Delivered</th>
-                      <th data-label="Image Upload">Image Upload</th>
-                      <th data-label="Image View">Image View</th>
-                      <th data-label="Actions"> Actions</th>
-                      <th data-label="Download Barcode">Download Barcode</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupedItems[college].map((item) => (
-                      <tr key={item.uniqueId}>
-                        <td>
-                          <span 
-                            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
-                            onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
-                          >
-                            {item.uniqueId}
-                          </span>
-                        </td>
-                        <td>
-                          <span 
-                            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
-                            onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
-                          >
-                            {item.itemName}
-                          </span>
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={requestedQuantities[item.requestId] || item.requestedQuantity}
-                            onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
-                            disabled={!editMode[item.requestId]}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={itemQuantities[item.requestId] || item.purchasedQuantity}
-                            onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
-                            disabled={!editMode[item.requestId]}
-                          />
-                        </td>
-                        <td>{item.supplierName}</td>
-                        <td>{item.category}</td>
-                        <td>{item.department}</td>
-                        <td>{item.program}</td>
-                        <td>{item.requestDate}</td>
-                        <td>{item.requestPurpose}</td>
-                        <td>{item.specificType}</td>
-                        <td>
-                          <input
-                            type="date"
-                            value={dateDelivered[item.requestId] || item.dateDelivered}
-                            onChange={(e) => handleDateChange(item.requestId, e.target.value)}
-                            disabled={!editMode[item.requestId]}
-                          />
-                        </td>
-                        <td>
-                          {editMode[item.requestId] && (
-                            <WebcamCapture 
-                              requestId={item.requestId} 
-                              editMode={editMode[item.requestId]} 
-                              onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
-                            />
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
-                            disabled={!editMode[item.requestId]}
-                          />
-                        </td>
-                        <td>
-                          {item.image ? (
-                            <a href={item.image} target="_blank" rel="noopener noreferrer">
-                              View Image
-                            </a>
-                          ) : (
-                            <span>No Image</span>
-                          )}
-                        </td>
-                        <td>
-                          {editMode[item.requestId] ? (
-                            <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
-                          ) : (
-                            <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
-                          )}
-                          <button 
-                            onClick={() => handleDelete(item.requestId)} 
-                            disabled={item.isApproved}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                        <td>
-                          <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
-                        </td>
+                <div className="table-responsive">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th data-label="Unique ID">Unique ID</th>
+                        <th data-label="Item Name">Item Name</th>
+                        <th data-label="Requested Quantity">Requested Quantity</th>
+                        <th data-label="Delivered Quantity">Delivered Quantity</th>
+                        <th data-label="Supplier Name">Supplier Name</th>
+                        <th data-label="Category">Category</th>
+                        <th data-label="Department">Department</th>
+                        <th data-label="Program">Program</th>
+                        <th data-label="Request Date">Request Date</th>
+                        <th data-label="Request Purpose">Request Purpose</th>
+                        <th data-label="Specific Type">Specific Type</th>
+                        <th data-label="Date Delivered">Date Delivered</th>
+                        <th data-label="Image Upload">Image Upload</th>
+                        <th data-label="Actions">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {groupedItems[college].map((item) => (
+                        <tr key={item.uniqueId}>
+                          <td>
+                            <span 
+                              style={{ cursor : 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                              onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
+                            >
+                              {item.uniqueId}
+                            </span>
+                          </td>
+                          <td>
+                            <span 
+                              style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                              onClick={() => downloadBarcode(item.uniqueId, item.itemName)}
+                            >
+                              {item.itemName}
+                            </span>
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              value={requestedQuantities[item.requestId] || item.requestedQuantity}
+                              onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
+                              disabled={!editMode[item.requestId]}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              value={itemQuantities[item.requestId] || item.purchasedQuantity}
+                              onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
+                              disabled={!editMode[item.requestId]}
+                            />
+                          </td>
+                          <td>{item.supplierName}</td>
+                          <td>{item.category}</td>
+                          <td>{item.department}</td>
+                          <td>{item.program}</td>
+                          <td>{item.requestDate}</td>
+                          <td>{item.requestPurpose}</td>
+                          <td>{item.specificType}</td>
+                          <td>
+                            <input
+                              type="date"
+                              value={dateDelivered[item.requestId] || item.dateDelivered}
+                              onChange={(e) => handleDateChange(item.requestId, e.target.value)}
+                              disabled={!editMode[item.requestId]}
+                            />
+                          </td>
+                          <td>
+                            {editMode[item.requestId] && (
+                              <WebcamCapture 
+                                requestId={item.requestId} 
+                                editMode={editMode[item.requestId]} 
+                                onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
+                              />
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
+                              disabled={!editMode[item.requestId]}
+                            />
+                          </td>
+                          <td>
+                            <button 
+                              onClick={() => {
+                                if (item.image) {
+                                  window.open(item.image, '_blank');
+                                } else {
+                                  alert("No image available.");
+                                }
+                              }}
+                            >
+                              View Image
+                            </button>
+                            {editMode[item.requestId] ? (
+                              <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
+                            ) : (
+                              <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                            )}
+                            <button 
+                              onClick={() => handleDelete(item.requestId)} 
+                              disabled={item.isApproved}
+                            >
+                              Delete
+                            </button>
+                            <button onClick={() => downloadBarcode(item.uniqueId, item.itemName)}>Download Barcode</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           ))}

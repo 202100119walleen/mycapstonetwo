@@ -1,61 +1,111 @@
+/* ManageItem.css */
+
 .manage-item {
   padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.search-barmanage {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.table-responsive {
+  overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  overflow-x: auto; /* Allow horizontal scrolling */
+  margin-bottom: 20px;
 }
 
 th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
+  padding: 12px;
   text-align: left;
+  border: 1px solid #ddd;
 }
 
 th {
-  background-color: #f2f2f2;
+  background-color: #f4f4f4;
 }
 
-/* Responsive styles */
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #f1f1f1;
+}
+
+input[type="number"],
+input[type="date"],
+input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  margin: 4px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 4px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
 @media (max-width: 768px) {
+  th, td {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  input[type="number"],
+  input[type="date"],
+  input[type="file"] {
+    font-size: 14px;
+  }
+
+  button {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  .search-barmanage {
+    font-size: 14px;
+  }
+
   table {
-    display: block; /* Make the table block for scrolling */
-    overflow-x: auto; /* Allow horizontal scrolling */
-    white-space: nowrap; /* Prevent text wrapping */
+    font-size: 12px;
   }
 
   th, td {
-    display: block; /* Stack the cells */
-    text-align: right; /* Align text to the right */
+    padding: 6px;
   }
 
-  th {
-    position: relative; /* Position relative for pseudo-elements */
-    padding-left: 50%; /* Add padding for labels */
+  button {
+    font-size: 12px;
+    padding: 6px 10px;
   }
-
-  th::before {
-    content: attr(data-label); /* Use data-label for headers */
-    position: absolute;
-    left: 10px; /* Position the label */
-    width: calc(100% - 20px); /* Full width minus padding */
-    padding-right: 10px; /* Padding for the label */
-    text-align: left; /* Align text to the left */
-    font-weight: bold; /* Make the label bold */
-  }
-
-  td {
-    text-align: left; /* Align text to the left */
-    padding-left: 50%; /* Add padding for labels */
-  }
-}
-.search-barmanage {
-  width: 200px; /* Adjust the width as needed */
-  padding: 8px; /* Add some padding for better appearance */
-  border: 1px solid #ccc; /* Add a border */
-  border-radius: 4px; /* Rounded corners */
-  font-size: 14px; /* Font size */
-  margin-bottom: 20px; /* Space below the search bar */
 }

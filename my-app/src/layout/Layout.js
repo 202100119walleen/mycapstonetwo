@@ -1,4 +1,3 @@
-// src/components/Layout.js
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaTachometerAlt, FaBoxOpen, FaCheck, FaFileAlt, FaBarcode, FaCog } from 'react-icons/fa';
@@ -20,8 +19,8 @@ const Layout = ({ children }) => {
     <div className="layout-container">
       <nav className="sidebar-nav">
         <div className="sidebar-header">
-          <img src="spclayoutlogo.png" alt="SPC Logo" className="logolayout" />
           <h2 className="system-namelayout">SIMS</h2>
+          <img src="spclayoutlogo.png" alt="SPC Logo" className="logolayout" />
         </div>
         <Link
           to="/dashboard"

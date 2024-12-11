@@ -1,20 +1,17 @@
 /* Base Styles for Approve Request Component */
 .approve-request {
-  width: 80%;
-  max-width: 700px; /* Reduced max-width for a better centered look */
-  margin: 0 auto; /* Center the container horizontally */
+  width: 90%;
+  max-width: 800px; /* Adjusted max-width for better mobile view */
+  margin: 0 auto; /* Center the container */
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Center the form elements */
-  background-color: #ffffff; /* Changed to white for better contrast */
+  background-color: #ffffff; /* White background for contrast */
 }
 
 /* Header Styles */
 .approve-request h1 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: bold;
   color: #333;
   text-align: center;
@@ -29,17 +26,19 @@
   padding: 10px;
   margin-bottom: 20px;
   border-radius: 4px;
-  width: 100%;
   text-align: center; /* Center error message */
+}
+
+/* View Mode Section */
+.view-mode-section {
+  margin-bottom: 20px;
 }
 
 /* Form Styles */
 form {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center the form fields */
-  gap: 15px;
-  width: 100%; /* Ensure form takes up full container width */
+  gap: 15px; /* Space between form elements */
 }
 
 /* Label Styles */
@@ -47,10 +46,6 @@ label {
   font-size: 16px;
   font-weight: 600;
   color: #555;
-  margin-bottom: 5px;
-  display: block;
-  width: 100%; /* Label takes full width */
-  text-align: left; /* Left align the labels */
 }
 
 /* Input and Select Styles */
@@ -59,152 +54,51 @@ input[type="date"],
 input[type="number"],
 select,
 input[type="file"] {
-  width: 100%;
+  width: 100%; /* Full width for inputs */
   padding: 10px;
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
-  background-color: #fff;
-  transition: border-color 0.3s; /* Smooth transition for border color */
-}
-
-/* Focus Styles */
-input[type="text"]:focus,
-input[type="date"]:focus,
-input[type="number"]:focus,
-select:focus {
-  border-color: #007bff; /* Highlight border on focus */
-  outline: none;
 }
 
 /* Button Styles */
-button[type="submit"],
-button[type="button"] {
+button {
   background-color: #660809; /* Theme color */
   color: white;
-  padding: 12px 20px;
+  padding: 12px;
   font-size: 16px;
   font-weight: bold;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-top: 10px;
-  width: 200px; /* Full width for buttons */
 }
 
 /* Button Hover Effects */
-button[type="submit"]:hover,
-button[type="button"]:hover {
+button:hover {
   background-color: #850b0c; /* Darker shade on hover */
 }
 
-/* Disabled Button Styles */
-button[type="submit"]:disabled {
-  background-color: #aaa;
-  cursor: not-allowed;
+/* Image Upload Section */
+.image-upload-section {
+  margin-top: 20px;
 }
 
-/* File Input Margin */
-input[type="file"] {
-  margin-top: 5px;
+/* Camera Section */
+.camera-section {
+  margin-top: 20px;
 }
 
-/* Section Styles */
-.approve-request > div {
-  margin-top: 30px;
-  background-color: transparent;
-  padding: 15px;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  width: 100%;
+/* Image Preview Styles */
+.image-preview {
+  margin-top: 20px;
+  text-align: center;
 }
 
-/* Bold Labels in Sections */
-.approve-request > div label {
-  font-weight: bold;
-}
-
-/* College and Category Section Styles */
-.college-section,
-.category-section {
-  background-color: #ffffff;
-  margin: 10px 0;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Flex Container for Form Elements */
-form div {
-  display: flex;
-  gap: 10px;
-  width: 100%; /* Ensure full width for flex containers */
-}
-
-/* Margin Reset for Labels in Flex Containers */
-form div label {
-  margin: 0;
-}
-
-/* Select and Input Field Styles */
-select,
-input[type="date"],
-input[type="number "] {
-  margin-top: 5px;
-  width: 100%; /* Full width for select and input fields */
-}
-
-/* Image Styles */
-.approve-request img {
-  max-width: 100%; /* Ensure images do not exceed the width of their container */
-  height: auto; /* Maintain aspect ratio */
-  margin: 10px 0; /* Add margin for spacing */
-}
 .image-preview img {
-  max-width: 30%; /* Set a smaller max width for the image */
+  max-width: 100%; /* Responsive image */
   height: auto; /* Maintain aspect ratio */
-  border-radius: 4px; /* Optional: Rounded corners for the image */
-  max-height: 200px; /* Optional: Set a maximum height to further control size */
-}
-/* Media Query for Responsiveness */
-@media (max-width: 768px) {
-  .approve-request {
-    width: 100%;
-    padding: 15px; /* Adjust padding for smaller screens */
-  }
-
-  form div {
-    flex-direction: column; /* Stack inputs vertically on small screens */
-  }
-
-  button[type="submit"],
-  button[type="button"] {
-    width: 100%; /* Full width for buttons on smaller screens */
-  }
-}
-
-/* Timeframe Form Styles */
-.timeframe-form {
-  display: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.timeframe-form.show {
-  display: block;
-  opacity: 1;
-}
-
-.timeframe-form.hide {
-  display: none;
-  opacity: 0;
-}
-
-/* Year Selection Styles */
-.year-selection {
-  margin-top: 15px;
 }
 
 /* Modal Overlay Styles */
@@ -227,41 +121,28 @@ input[type="number "] {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: 90%; /* Set the width of the modal to be responsive */
-  max-width: 500px; /* Ensure it doesn't exceed this width */
-  max-height: 80vh; /* Set a maximum height for the modal */
-  overflow-y: auto; /* Enable vertical scrolling if content exceeds max height */
+  width: 90%; /* Responsive width */
+  max-width: 500px; /* Max width for modal */
 }
 
-/* Modal Heading Styles */
-.modal-content h2 {
-  margin-top: 0; /* Remove margin from the top of the heading */
-}
-
-/* Modal Label Styles */
-.modal-content label {
-  display: block; /* Make labels block to occupy full width */
-  margin: 10px 0 5px; /* Add margin for spacing */
-}
-
-/* Modal Input Styles */
-.modal-content input[type="email"],
-.modal-content input[type="text"],
-.modal-content textarea {
-  width: 100%; /* Make inputs full width */
-  padding: 8px; /* Add padding */
-  margin-bottom: 10px; /* Space below inputs */
-  border: 1px solid #ccc; /* Border styling */
-  border-radius: 4px; /* Rounded corners */
-}
-
-/* Modal Button Styles */
-.modal-content button {
-  margin-right: 5px; /* Add space between buttons */
-}
-
-/* Responsive Adjustments */
+/* Media Queries for Responsiveness */
 @media (max-width: 768px) {
+  .approve-request {
+    padding: 15px; /* Adjust padding for smaller screens */
+  }
+
+  .approve-request h1 {
+    font-size: 20px; /* Smaller font size for headers */
+  }
+
+  form {
+    gap: 10px; /* Reduce gap between form elements */
+  }
+
+  button {
+    width: 100%; /* Full width for buttons on smaller screens */
+  }
+
   .modal-content {
     width: 95%; /* Increase width on smaller screens */
     padding: 15px; /* Reduce padding for smaller screens */

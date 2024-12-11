@@ -1,104 +1,100 @@
 /* Settings.css */
 
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4; /* Light background for better readability */
-    margin: 0;
-    padding: 0px;
-  }
-  
-  /* Main settings container */
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.settings {
+  max-width: 600px; /* Set a max width for the settings container */
+  margin: 0 auto; /* Center the container */
+  padding: 20px; /* Add padding */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+  border-radius: 8px; /* Optional: Rounded corners */
+  background-color: #fff; /* Optional: Background color */
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.error {
+  color: red;
+  text-align: center;
+}
+
+.success {
+  color: green;
+  text-align: center;
+}
+
+.setting-section {
+  margin-bottom: 20px; /* Space between sections */
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+button {
+  width: 100%; /* Make inputs and buttons full width */
+  padding: 10px;
+  margin: 10px 0; /* Space between inputs/buttons */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* Include padding and border in width */
+}
+
+/* Button styles */
+button {
+  width: auto; /* Change from 100% to auto */
+  padding: 10px 15px; /* Adjust padding for a better look */
+  margin: 10px 0; /* Keep vertical margin */
+  border: 1px solid #a1a1a1; /* Optional: Add border color */
+  border-radius: 4px;
+  background-color: #660809;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+button:hover {
+  background-color: #850b0c;
+}
+
+.confirmation-dialog {
+  margin-top: 10px; /* Space above confirmation dialog */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9; /* Light background for dialog */
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
   .settings {
-    max-width: 600px; /* Limit max width for larger screens */
-    margin: auto;
-    background: #ffffff; /* White background for the settings box */
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px; /* Reduce padding on smaller screens */
   }
-  
-  /* Headings */
+
   h2 {
-    text-align: center;
-    color: #333; /* Darker color for headings */
+    font-size: 24px; /* Smaller heading for mobile */
   }
-  
-  h3 {
-    color: #2c3e50; /* Darker shade for sub-headings */
-    margin-top: 20px;
-  }
-  
-  /* Input styles */
+
   input[type="text"],
   input[type="email"],
-  input[type="password"] {
-    width: 100%; /* Full width for inputs */
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #000000;
-    border-radius: 4px;
-    box-sizing: border-box; /* Ensure padding doesn't affect total width */
-  }
-  
-  /* Button styles */
+  input[type="password"],
   button {
-    background-color: #660809; /* Bright blue color for buttons */
-    color: white; /* White text for contrast */
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease; /* Smooth transition */
+    font-size: 14px; /* Smaller font size for mobile */
   }
-  
-  button:hover {
-    background-color: #850b0c; /* Darker blue on hover */
+}
+
+@media (max-width: 480px) {
+  h2 {
+    font-size: 20px; /* Even smaller heading for very small screens */
   }
-  
-  /* Error and success messages */
-  .error {
-    color: #e74c3c; /* Red for error messages */
-    font-weight: bold;
-    text-align: center;
+
+  button {
+    padding: 8px; /* Smaller padding for buttons on mobile */
   }
-  
-  .success {
-    color: #2ecc71; /* Green for success messages */
-    font-weight: bold;
-    text-align: center;
-  }
-  
-  /* Setting section styles */
-  .setting-section {
-    margin-bottom: 20px;
-  }
-  
-  /* Confirmation dialog styles */
-  .confirmation-dialog {
-    border: 1px solid #ccc;
-    padding: 15px;
-    background-color: #f9f9f9; /* Light grey for the dialog */
-    border-radius: 4px;
-  }
-  
-  .confirmation-dialog input {
-    margin: 10px 0; /* Margin for the input field */
-  }
-  
-  /* Responsive design */
-  @media (max-width: 600px) {
-    .settings {
-      padding: 15px; /* Less padding on small screens */
-    }
-  
-    h2 {
-      font-size: 1.5em; /* Slightly smaller heading */
-    }
-  
-    h3 {
-      font-size: 1.2em; /* Smaller sub-heading */
-    }
-  }
-  .submit-scanner{
-    background-color: #d9534f;
-  }
+}

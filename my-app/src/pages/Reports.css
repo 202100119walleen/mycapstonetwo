@@ -1,24 +1,51 @@
+/* Reports.css */
+
 .report-page {
   padding: 20px;
-  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: auto;
 }
 
-input[type="text"] {
-  padding: 10px;
-  margin-bottom: 20px;
+h1 {
+  text-align: center;
+}
+
+input[type="text"],
+input[type="date"],
+button {
   width: 100%;
-  max-width: 400px;
+  padding: 10px;
+  margin: 10px 0;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-.college-section {
-  margin-bottom: 30px;
+.date-filters {
+  display: flex;
+  flex-direction: column;
 }
 
-.department-section {
-  margin-left: 20px;
-  margin-bottom: 20px;
+.date-filters input {
+  width: 100%;
+}
+
+/* Reports.css */
+
+/* Other styles remain unchanged */
+
+button {
+  width: auto; /* Change from 100% to auto */
+  padding: 10px 20px; /* Add horizontal padding for a better look */
+  margin: 10px 0; /* Keep vertical margin */
+  border: 1px solid #007bff; /* Optional: Add border color */
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
 }
 
 ul {
@@ -27,9 +54,19 @@ ul {
 }
 
 li {
-  margin-bottom: 15px;
-  padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  background-color: #f9f9f9;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+@media (min-width: 600px) {
+  .date-filters {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .date-filters input {
+    width: 48%; /* Adjust width for larger screens */
+  }
 }

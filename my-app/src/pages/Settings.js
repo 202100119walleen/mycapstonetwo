@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { updateProfile, deleteUser, sendPasswordResetEmail, signOut } from 'firebase/auth';
+import { updateProfile, deleteUser , sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { auth } from '../firebase/firebase-config'; // Adjust the import path as needed
 import { useNavigate } from 'react-router-dom';
 import emailjs from 'emailjs-com'; // Import EmailJS
-import './Settings.css';
+import './Settings.css'; // Import the CSS file
 
 const Settings = () => {
   const [newName, setNewName] = useState('');
@@ -16,7 +16,7 @@ const Settings = () => {
 
   const handleChangeName = async () => {
     try {
-      await updateProfile(auth.currentUser, { displayName: newName });
+      await updateProfile(auth.currentUser , { displayName: newName });
       setSuccess('Name updated successfully');
       setError('');
     } catch (error) {
@@ -50,7 +50,7 @@ const Settings = () => {
           }, "dXV00-Wj5L1tjyQCC");
 
           // Delete the user account
-          await deleteUser(auth.currentUser);
+          await deleteUser (auth.currentUser );
 
           // Sign out the user
           await signOut(auth);

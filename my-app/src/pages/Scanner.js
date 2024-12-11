@@ -3,6 +3,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
 import JsBarcode from 'jsbarcode';
 import { BrowserMultiFormatReader } from '@zxing/library';
+import './Scanner.css'; // Adjust the path based on your project structure
 
 const ScannerPage = () => {
   const [items, setItems] = useState([]);

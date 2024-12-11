@@ -37,20 +37,22 @@ const CreateAccountPage = () => {
       <h1>Create Account</h1>
       <form onSubmit={handleSignUp}>
         <div>
-          <label>Email:</label>
           <input
             type="email"
+            id="email" // Added id for accessibility
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email" // Placeholder for email input
             required
           />
         </div>
         <div>
-          <label>Password:</label>
           <input
             type="password"
+            id="password" // Added id for accessibility
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password" // Placeholder for password input
             required
           />
         </div>

@@ -3,6 +3,7 @@
 .layout-container {
   display: flex;
   height: 100vh;
+  flex-direction: row; /* Default to row layout */
 }
 
 .sidebar-nav {
@@ -13,6 +14,7 @@
   flex-direction: column;
   padding: 20px;
   min-width: 15%;
+  transition: width 0.3s; /* Smooth transition for width changes */
 }
 
 .sidebar-header {
@@ -21,19 +23,23 @@
   align-items: center;
   margin-bottom: 20px;
 }
-.system-namelayout{
+
+.system-namelayout {
   font-size: 30px;
   color: #f9f9f9;
 }
+
 .logo {
   width: 300px; /* Adjust size as needed */
   height: auto;
   margin-bottom: 10px;
 }
-.logolayout{
+
+.logolayout {
   width: 150px;
   height: 150px;
 }
+
 .system-name {
   font-size: 50px;
   font-weight: bold;
@@ -68,13 +74,16 @@
   padding: 20px;
   overflow-y: auto;
 }
+
 .nav-link.active {
   background-color: #850b0c; /* Highlight color */
   color: #fff; /* Text color for active link */
 }
+
 .nav-link.active .nav-icon {
   color: #fff; /* Icon color for active link */
 }
+
 .logout-button {
   margin-top: auto; /* Push the button to the bottom of the sidebar */
   padding: 10px;
@@ -85,10 +94,51 @@
   cursor: pointer; /* Pointer cursor on hover */
   transition: background-color 0.3s; /* Smooth background transition */
   font-size: 15px;
-  
-
 }
 
 .logout-button:hover {
   background-color: #c82333; /* Darker red on hover */
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .layout-container {
+    flex-direction: column; /* Stack sidebar and content vertically */
+    height: auto; /* Allow height to adjust */
+  }
+
+  .sidebar-nav {
+    width: 100%; /* Full width on smaller screens */
+    min-width: 100%; /* Ensure it takes full width */
+  }
+
+  .content {
+    padding: 10px; /* Reduce padding for smaller screens */
+  }
+
+  .system-name {
+    font-size: 30px; /* Smaller font size for smaller screens */
+  }
+
+  .nav-link {
+    font-size: 14px; /* Smaller font size for links */
+  }
+
+  .logout-button {
+    font-size: 14px; /* Smaller font size for button */
+  }
+}
+
+@media (max-width: 480px) {
+  .system-name {
+    font-size: 24px; /* Further reduce font size for very small screens */
+  }
+
+  .sidebar-header {
+    margin-bottom: 10px; /* Reduce margin for smaller screens */
+  }
+
+  .logo {
+    width: 200px; /* Adjust logo size for smaller screens */
+  }
 }

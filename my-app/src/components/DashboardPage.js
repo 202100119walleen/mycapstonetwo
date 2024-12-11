@@ -113,88 +113,88 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <h2>Admin Dashboard</h2>
-        <div className="search -and-profile">
-          <input
-            type="text"
-            placeholder="Search categories..."
-            className="search-input"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          <div className="profile">
-            <img
-              src={profileImage}
-              alt="Profile Icon"
-              className="profile-icon"
-              onClick={handleImageClick}
-              style={{ cursor: 'pointer' }}
-            />
-            <input type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={handleImageUpload}
-            />
-            <span className="user-name">{userName}</span>
-            <button className="dropdown-toggle" onClick={toggleDropdown}>
-              &#9662;
-            </button>
-            {dropdownOpen && (
-              <div className="dropdown-menu">
-                <Link to="/settings">Account Settings</Link>
-                <button onClick={handleLogout}>Logout</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="dashboard-content">
-        <section className="cards">
-          <div className="card item-card">
-            <Link to="/manage-item" className="ditems">
-              <h3>ITEMS</h3>
-              <p>Total Items: {totalItems}</p>
-            </Link>
-          </div>
-
-          <div className="card folder-card">
-            <Link to="/manage-item" className="link">
-              <h3>Non Academic</h3>
-            </Link>
-            <div className="folder-list">
-              <h4 onClick={() => handleCategoryClick('Non Academic')}>Non Academic</h4>
-              {selectedCategory === 'Non Academic' && (
-                <ul className="item-list">
-                  <li>Total Items: {categoryItemCounts.nonAcademic}</li>
-                </ul>
-              )}
+        <header className="dashboard-header">
+            <h2>Admin Dashboard</h2>
+            <div className="search-and-profile">
+                <input
+                    type="text"
+                    placeholder="Search categories..."
+                    className="search-input"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                />
+                <div className="profile">
+                    <img
+                        src={profileImage}
+                        alt="Profile Icon"
+                        className="profile-icon"
+                        onClick={handleImageClick}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    <input type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleImageUpload}
+                    />
+                    <span className="user-name">{userName}</span>
+                    <button className="dropdown-toggle" onClick={toggleDropdown}>
+                        &#9662;
+                    </button>
+                    {dropdownOpen && (
+                        <div className="dropdown-menu">
+                            <Link to="/settings">Account Settings</Link>
+                            <button onClick={handleLogout}>Logout</button>
+                        </div>
+                    )}
+                </div>
             </div>
-          </div>
+        </header>
 
-          <div className="card folder-card">
-            <Link to="/manage-item" className="link">
-              <h3>Academic</h3>
-            </Link>
-            <div className="folder-list">
-              <h4 onClick={() => handleCategoryClick('Academic')}>Academic</h4>
-              {selectedCategory === 'Academic' && (
-                <ul className="item-list">
-                  <li>Total Items: {categoryItemCounts.academic}</li>
-                </ul>
-              )}
-            </div>
-          </div>
+        <main className="dashboard-content">
+            <section className="cards">
+                <div className="card item-card">
+                    <Link to="/manage-item" className="ditems">
+                        <h3>ITEMS</h3>
+                        <p>Total Items: {totalItems}</p>
+                    </Link>
+                </div>
 
-          <div className="card approve-request-card">
-            <Link to="/approve-request" className="link">
-              <h3>PURCHASED REQUEST</h3>
-            </Link>
-            <p>Total Approved Requests: {totalApprovedRequests}</p>
-          </div>
-        </section>
-      </main>
+                <div className="card folder-card">
+                    <Link to="/manage-item" className="link">
+                        <h3>Non Academic</h3>
+                    </Link>
+                    <div className="folder-list">
+                        <h4 onClick={() => handleCategoryClick('Non Academic')}>Non Academic</h4>
+                        {selectedCategory === 'Non Academic' && (
+                            <ul className="item-list">
+                                <li>Total Items: {categoryItemCounts.nonAcademic}</li>
+                            </ul>
+                        )}
+                    </div>
+                </div>
+
+                <div className="card folder-card">
+                    <Link to="/manage-item" className="link">
+                        <h3>Academic</h3>
+                    </Link>
+                    <div className="folder-list">
+                        <h4 onClick={() => handleCategoryClick('Academic')}>Academic</h4>
+                        {selectedCategory === 'Academic' && (
+                            <ul className="item-list">
+                                <li>Total Items: {categoryItemCounts.academic}</li>
+                            </ul>
+                        )}
+                    </div>
+                </div>
+
+                <div className="card approve-request-card">
+                    <Link to="/approve-request" className="link">
+                        <h3>PURCHASED REQUEST</h3>
+                    </Link>
+                    <p>Total Approved Requests: {totalApprovedRequests}</p>
+                </div>
+            </section>
+        </main>
     </div>
   );
 };

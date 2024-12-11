@@ -4,6 +4,14 @@
   flex-direction: column;
   align-items: center;
   padding: 20px;
+  max-width: 100%; /* Ensure it doesn't exceed the viewport width */
+  box-sizing: border-box; /* Include padding in width calculation */
+}
+
+.create-account-container h1 {
+  margin-bottom: 20px; /* Space below the heading */
+  font-size: 24px; /* Adjust heading size */
+  text-align: center; /* Center the heading */
 }
 
 .create-account-container form {
@@ -15,17 +23,22 @@
 
 .create-account-container div {
   margin-bottom: 15px;
-}
-
-.create-account-container label {
-  margin-bottom: 5px;
+  width: 100%; /* Ensure div takes full width */
 }
 
 .create-account-container input {
-  padding: 8px;
-  font-size: 16px;
+  padding: 10px; /* Increased padding for better touch targets */
+  font-size: 16px; /* Font size for input text */
   width: 100%; /* Full width for input fields */
   box-sizing: border-box; /* Include padding in width calculation */
+  border: 1px solid #ccc; /* Add border for better visibility */
+  border-radius: 4px; /* Rounded corners */
+  transition: border-color 0.3s; /* Smooth transition for border color */
+}
+
+.create-account-container input:focus {
+  border-color: #a30101d4; /* Change border color on focus */
+  outline: none; /* Remove default outline */
 }
 
 .create-account-container button {
@@ -37,18 +50,45 @@
   border-radius: 5px;
   cursor: pointer;
   width: 100%; /* Full width for buttons */
+  font-size: 16px; /* Consistent font size */
+  transition: background-color 0.3s; /* Smooth transition for background color */
 }
 
-.create-account-container .back-button {
-  background-color: #a72e2e;
+.create-account-container button:hover {
+  background-color: #a72e2e; /* Darker shade on hover */
 }
 
 .create-account-container .error {
   color: red;
+  font-size: 14px; /* Consistent font size for error messages */
 }
 
 .create-account-container .success {
   color: green;
+  font-size: 14px; /* Consistent font size for success messages */
+}
+
+.create-account-container .links {
+  display: flex; /* Use flexbox for centering */
+  justify-content: center; /* Center the button horizontally */
+  margin-top: 20px; /* Space above the links section */
+}
+
+.create-account-container .back-button {
+  background-color: #a72e2e;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px; /* Adjust padding for a smaller button */
+  cursor: pointer;
+  width: 80%; /* Set width to a smaller percentage for a smaller button */
+  max-width: 200px; /* Optional: Set a maximum width for the button */
+  font-size: 14px; /* Adjust font size for better appearance */
+  transition: background-color 0.3s; /* Smooth transition for background color */
+}
+
+.create-account-container .back-button:hover {
+  background-color: #a30101d4; /* Darker shade on hover */
 }
 
 /* Media Queries for Responsiveness */
@@ -68,6 +108,11 @@
   .create-account-container button {
       padding: 8px; /* Adjust button padding */
   }
+
+  .create-account-container .error,
+  .create-account-container .success {
+      font-size: 14px; /* Adjust message font size */
+  }
 }
 
 @media (max-width: 480px) {
@@ -81,5 +126,10 @@
 
   .create-account-container button {
       padding: 6px; /* Further adjust button padding */
+  }
+
+  .create-account-container .error,
+  .create-account-container .success {
+      font-size: 12px; /* Further adjust message font size */
   }
 }
