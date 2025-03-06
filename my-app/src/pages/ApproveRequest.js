@@ -3,10 +3,9 @@ import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot } from 'fireb
 import { db, storage } from '../firebase/firebase-config'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import emailjs from 'emailjs-com';
-
 import './ApproveRequest.css';
 
-const categories = ["Equipment", "Office Supplies", "Books", "Electrical Parts"];
+const categories = ["Equipment", "Office Supplies", "Books", "Electrical parseInt"];
 const nonAcademicOptions = [
   "FINANCE OFFICE", "OFFICE OF THE PRESIDENT", "HUMAN RESOURCE", "LIBRARY", "MANAGEMENT INFORMATION SYSTEM",
   "OFFICE OF THE REGISTRAR", "OFFICE OF THE STUDENT AFFAIRS AND SERVICES", "RESEARCH AND CREATIVE WORKS",
@@ -57,7 +56,6 @@ const academicPrograms = {
 };
 
 const ApproveRequest = () => {
-  
   const [requestDetails, setRequestDetails] = useState({
     itemName: [],
     category: '',
@@ -68,7 +66,6 @@ const ApproveRequest = () => {
     requestDate: '',
     requestPurpose: '',
     supplierName: '',
-    quantity: '',
     approved: false,
     imageUrl: '',
     specificType: ''
@@ -83,14 +80,14 @@ const ApproveRequest = () => {
   const [currentRequest, setCurrentRequest] = useState(null);
   const [formData, setFormData] = useState({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
   const [itemQuantities, setItemQuantities] = useState({});
+  const [itemAmounts, setItemAmounts] = useState({}); // State for item amounts
   const [imagePreview, setImagePreview] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
-  const [videoConstraints, setVideoConstraints] = useState({ facingMode: 'user' });
+ const [cameraDevices, setCameraDevices] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState('');
   const videoRef = useRef(null);
-  
 
-  
-  
+  // Fetch requests from Firestore
   useEffect(() => {
     const requestCollection = collection(db, 'requests');
     const unsubscribe = onSnapshot(requestCollection, (snapshot) => {
@@ -103,38 +100,42 @@ const ApproveRequest = () => {
     return () => unsubscribe();
   }, []);
 
-  
+  // Get available camera devices
+  useEffect(() => {
+    const getCameraDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        setCameraDevices(videoDevices);
+        if (videoDevices.length > 0) {
+          setSelectedCamera(videoDevices[0].deviceId); // Default to the first camera
+        } else {
+          setErrorMessage('No camera devices found.');
+        }
+      } catch (error) {
+        console.error('Error fetching camera devices:', error);
+        setErrorMessage('Failed to access camera devices.');
+      }
+    };
+    getCameraDevices();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setRequestDetails((prev) => ({ ...prev, [name]: value }));
     setErrorMessage('');
   };
-  
 
-  const handleItemChange = (id, field, value) => {
-    setRequestDetails((prev) => ({
-      ...prev,
-      itemName: prev.itemName.map((item) =>
-        item.id === id
-          ? { ...item, [field]: value }  // Update the correct item
-          : item
-      ),
-    }));
+  const handleItemChange = (index, field, value) => {
+    const newItemNames = [...requestDetails.itemName];
+    newItemNames[index] = { ...newItemNames[index], [field]: value };
+    setRequestDetails((prev) => ({ ...prev, itemName: newItemNames }));
   };
-  
-
-
 
   const addItem = () => {
-    const newItem = {
-      id: `item-${Date.now()}`,  // Generate a unique ID using the current timestamp
-      name: '', 
-      quantity: 0,
-      status: '❌',  // Default status
-    };
     setRequestDetails((prev) => ({
       ...prev,
-      itemName: [...prev.itemName, newItem],  // Add the new item with a unique ID
+      itemName: [...prev.itemName, { name: '', quantity: '', purchasedQuantity: 0, totalAmount: 0 }]
     }));
   };
 
@@ -159,7 +160,7 @@ const ApproveRequest = () => {
         const requestRef = doc(db, 'requests', editingRequest.id);
         await updateDoc(requestRef, {
           ...requestDetails,
-          uniqueId: editingRequest.uniqueId, // Keep the original unique ID
+          uniqueId: editingRequest.uniqueId,
           requestDate: new Date(requestDetails.requestDate).getTime(),
         });
         setEditingRequest(null);
@@ -189,7 +190,6 @@ const ApproveRequest = () => {
       requestDate: '',
       requestPurpose: '',
       supplierName: '',
-      quantity: '',
       approved: false,
       imageUrl: '',
       specificType: ''
@@ -198,6 +198,7 @@ const ApproveRequest = () => {
     setErrorMessage('');
     setImagePreview('');
     setItemQuantities({});
+    setItemAmounts({});
 
     const imageInput = document.getElementById('imageInput');
     if (imageInput) {
@@ -232,7 +233,7 @@ const ApproveRequest = () => {
 
   const renderRequestsByFolder = (folderName) => {
     const requestsByCollege = groupedRequests();
-  
+
     return Object.keys(requestsByCollege).map((college) => (
       college === folderName && (
         <div key={college} className="college-section">
@@ -245,7 +246,6 @@ const ApproveRequest = () => {
                 <div key={category} className="category-section">
                   <h4>{category}</h4>
                   <ul>
-                    {/* Separate unapproved and approved requests */}
                     {requestsByCollege[college][category].filter(request => !request.approved).map((request) => (
                       <li key={request.id}>
                         <div>
@@ -256,14 +256,14 @@ const ApproveRequest = () => {
                               request.itemName.map((item, index) => {
                                 const itemRequested = parseInt(item.quantity || 0, 10);
                                 const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
-                                const finalNotPurchased = itemRequested - itemPurchased;
-  
+                                const totalAmount = parseFloat(item.totalAmount) || 0; // Ensure totalAmount is a number
+
                                 return (
                                   <li key={index}>
                                     {item.name} - 
                                     <span> {itemRequested} requested,</span> 
                                     <span> {itemPurchased} purchased,</span> 
-                                    <span> {finalNotPurchased} not purchased</span>
+                                    <span> Amount: {totalAmount.toFixed(2)}</span> {/* Display totalAmount with two decimal places */}
                                   </li>
                                 );
                               })
@@ -310,7 +310,6 @@ const ApproveRequest = () => {
                         </div>
                       </li>
                     ))}
-                    {/* Render approved requests after unapproved */}
                     {requestsByCollege[college][category].filter(request => request.approved).map((request) => (
                       <li key={request.id}>
                         <div>
@@ -321,14 +320,16 @@ const ApproveRequest = () => {
                               request.itemName.map((item, index) => {
                                 const itemRequested = parseInt(item.quantity || 0, 10);
                                 const itemPurchased = parseInt(item.purchasedQuantity || 0, 10);
+                                const totalAmount = parseFloat(item.totalAmount) || 0; // Ensure totalAmount is a number
                                 const finalNotPurchased = itemRequested - itemPurchased;
-  
+
                                 return (
                                   <li key={index}>
                                     {item.name} - 
                                     <span> {itemRequested} requested,</span> 
-                                    <span> {itemPurchased} purchased,</span> 
-                                    <span> {finalNotPurchased} not purchased</span>
+                                    <span> { itemPurchased} purchased,</span> 
+                                    <span> {finalNotPurchased} not purchased,</span>
+                                    <span> Amount: {totalAmount.toFixed(2)}</span>
                                   </li>
                                 );
                               })
@@ -376,6 +377,12 @@ const ApproveRequest = () => {
                       </li>
                     ))}
                   </ul>
+                  <p><strong>Total Amount:</strong> {requestsByCollege[college][category].reduce((total, request) => {
+                    return total + request.itemName.reduce((itemTotal, item) => {
+                      const itemTotalAmount = parseFloat(item.totalAmount) || 0; // Default to 0 if undefined
+                      return itemTotal + itemTotalAmount; // Ensure it's a number
+                    }, 0);
+                  }, 0).toFixed(2)}</p>
                 </div>
               ))}
             </>
@@ -384,11 +391,11 @@ const ApproveRequest = () => {
       )
     ));
   };
-  
 
   const openModal = (request) => {
     setCurrentRequest(request);
     setItemQuantities({});
+    setItemAmounts({});
     setFormData({ purchaseDate: '', requestorEmail: '', requestorPhone: '' });
     setIsModalOpen(true);
   };
@@ -405,35 +412,44 @@ const ApproveRequest = () => {
     }));
   };
 
+  const handleAmountChange = (itemName, value) => {
+    const amount = parseFloat(value) || 0; // Ensure it's a number
+    setItemAmounts((prev) => ({
+      ...prev,
+      [itemName]: amount
+    }));
+  };
+
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
 
     const itemsUpdated = currentRequest.itemName.map(item => {
-      const purchasedQuantity = itemQuantities[item.name] || 0; // Get the purchased quantity from the input
-      const remainingQuantity = item.quantity - purchasedQuantity; // Calculate remaining quantity
-      const status = remainingQuantity === 0 ? '✔️' : (purchasedQuantity > 0 ? '❌' : '❌');
+      const purchasedQuantity = itemQuantities[item.name] || 0;
+      const totalAmount = itemAmounts[item.name] || 0;
+      const remainingQuantity = item.quantity - purchasedQuantity;
+      const status = remainingQuantity === 0 ? '✔️' : (purchasedQuantity > 0 ? '✔' : '✔');
       return { 
         ...item, 
         purchasedQuantity: purchasedQuantity,
         quantity: item.quantity, 
+        totalAmount: totalAmount,
         status 
       };
     });
 
     const requestRef = doc(db, 'requests', currentRequest.id);
     
-    // Set approved to true regardless of remaining quantities
     const allItemsDone = itemsUpdated.some(item => item.purchasedQuantity > 0);
 
     try {
       await updateDoc(requestRef, {
- itemName: itemsUpdated,
-        approved: allItemsDone // Set approved to true if any items are purchased
+        itemName: itemsUpdated,
+        approved: allItemsDone
       });
 
       const templateParams = {
         to_email: currentRequest.requestorEmail || 'walleenates808@gmail.com',
-        items: itemsUpdated.map(item => `${item.name} (Requested: ${item.quantity}, Purchased: ${item.purchasedQuantity}, Status: ${item.status})`).join(', '),
+        items: itemsUpdated.map(item => `${item.name} (Requested: ${item.quantity}, Purchased: ${item.purchasedQuantity}, Amount: ${item.totalAmount}, Status: ${item.status})`).join(', '),
         action: 'Purchased',
         purchaseDate: formData.purchaseDate,
         requestPurpose: currentRequest.requestPurpose,
@@ -468,42 +484,52 @@ const ApproveRequest = () => {
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = async (deviceId) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setCameraActive(true);
-    } catch (err) {
-      setErrorMessage('Camera access denied: ' + err.message);
-    }
-  };
+      const constraints = {
+        video: { deviceId: { exact: deviceId } },
+      };
 
-  const toggleCamera = () => {
-    setVideoConstraints((prev) => ({
-      facingMode: prev.facingMode === 'user' ? 'environment' : 'user',
-    }));
+      if (videoRef.current) {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setCameraActive(true);
+      setErrorMessage('');
+    } catch (error) {
+      console.error('Error starting camera:', error);
+      setErrorMessage('Failed to access the camera: ' + error.message);
+    }
   };
 
   const captureImage = () => {
     const canvas = document.createElement('canvas');
     const video = videoRef.current;
 
+    if (!video) {
+      setErrorMessage("Camera is not active.");
+      return;
+    }
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const imageData = canvas.toDataURL('image/png');
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    const imageData = canvas.toDataURL('image/png');
     setImagePreview(imageData);
-    setRequestDetails((prev) => ({
-      ...prev,
-      imageUrl: imageData,
-    }));
+    setRequestDetails(prev => ({ ...prev, imageUrl: imageData }));
 
     stopCamera();
+  };
+
+  const handleCameraChange = (e) => {
+    const newDeviceId = e.target.value;
+    setSelectedCamera(newDeviceId);
+    startCamera(newDeviceId);
   };
 
   const stopCamera = () => {
@@ -542,24 +568,23 @@ const ApproveRequest = () => {
           <button type="button" onClick={addItem}>Add Item</button>
         </label>
         {requestDetails.itemName.map((item, index) => (
-  <div key={item.id}>  {/* Use the unique ID as the key */}
-    <input 
-      type="text" 
-      placeholder="Item Name" 
-      value={item.name} 
-      onChange={(e) => handleItemChange(item.id, 'name', e.target.value)} 
-      required 
-    />
-    <input 
-      type="number" 
-      placeholder="Quantity" 
-      value={item.quantity} 
-      onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)} 
-      required 
-    />
-  </div>
-))}
-
+          <div key={index}>
+            <input 
+              type="text" 
+              placeholder="Item Name" 
+              value={item.name} 
+              onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
+              required 
+            />
+            <input 
+              type="number" 
+              placeholder="Quantity" 
+              value={item.quantity} 
+              onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} 
+              required 
+            />
+          </div>
+        ))}
         <label>
           Request Purpose: 
           <input 
@@ -567,8 +592,7 @@ const ApproveRequest = () => {
             name="requestPurpose" 
             value={requestDetails.requestPurpose} 
             onChange={handleInputChange} 
-            required 
-          />
+            required />
         </label>
         <label>
           Supplier Name: 
@@ -584,7 +608,7 @@ const ApproveRequest = () => {
           Category: 
           <select name="category" value={requestDetails.category} onChange={handleInputChange}>
             <option value="">Select Category</option>
-            {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </label>
         {requestDetails.category && (
@@ -612,7 +636,7 @@ const ApproveRequest = () => {
             Subcategory: 
             <select name="department" value={requestDetails.department} onChange={handleInputChange}>
               <option value="">Select Non Academic Subcategory</option>
-              {nonAcademicOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              {nonAcademicOptions.map(option => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
         )}
@@ -622,7 +646,7 @@ const ApproveRequest = () => {
               College: 
               <select name="department" value={requestDetails.department} onChange={handleInputChange}>
                 <option value="">Select Academic College</option>
-                {academicColleges.map((college) => (
+                {academicColleges.map(college => (
                   <option key={college} value={college}>{college}</option>
                 ))}
               </select>
@@ -632,7 +656,7 @@ const ApproveRequest = () => {
                 Academic Program: 
                 <select name="program" value={requestDetails.program} onChange={handleInputChange}>
                   <option value="">Select Academic Program</option>
-                  {academicPrograms[requestDetails.department].map((program) => (
+                  {academicPrograms[requestDetails.department].map(program => (
                     <option key={program} value={program}>{program}</option>
                   ))}
                 </select>
@@ -652,19 +676,45 @@ const ApproveRequest = () => {
         </label>
         <div className="image-upload-section">
           <h3>Upload Image</h3>
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            id="imageInput"
+          />
         </div>
+
         <div className="camera-section">
-          <h3>Capture Image</h3>
-          <button type="button" onClick={startCamera} disabled={cameraActive}>
+          <h3>Select Camera</h3>
+          <select onChange={handleCameraChange} value={selectedCamera}>
+            {cameraDevices.map(device => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label || `Camera ${device.deviceId}`}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => startCamera(selectedCamera)}
+            disabled={cameraActive || cameraDevices.length === 0}
+          >
             Open Camera
           </button>
+
           {cameraActive && (
             <div className="camera-preview">
-              <video ref={videoRef} autoPlay style={{ width: '100%' }} />
-              <button type="button" onClick={captureImage}>Capture</button>
-              <button type="button" onClick={stopCamera}>Cancel</button>
-              <button type="button" onClick={toggleCamera}>Switch Camera</button>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{ width: '100%', height: 'auto', border: '1px solid #ccc' }}
+              />
+              <div className="camera-controls">
+                <button type="button" onClick={captureImage}>Capture</button>
+                <button type="button" onClick={stopCamera}>Stop Camera</button>
+              </div>
             </div>
           )}
         </div>
@@ -672,13 +722,14 @@ const ApproveRequest = () => {
         {imagePreview && (
           <div className="image-preview">
             <h4>Preview:</h4>
-            <img src={imagePreview} alt="Uploaded or Captured" />
+            <img src={imagePreview} alt="Captured" style={{ maxWidth: '100%', border: '1px solid #ddd', padding: '5px' }} />
           </div>
         )}
-        <button type="submit">{editingRequest ? 'Update Request' : 'Submit Request'}</button>
+
+        <button type="submit">{editingRequest ? "Update Request" : "Submit Request"}</button>
       </form>
 
-      <h2>Submitted Requests</h2>
+ <h2>Submitted Requests</h2>
       {requests.length > 0 ? (
         <div>
           {viewMode === 'nonAcademic' && renderRequestsByFolder('Non Academic')}
@@ -709,9 +760,13 @@ const ApproveRequest = () => {
                       {item.name} (Total Quantity: {item.quantity}, Purchased: {purchasedQuantity}, Remaining: {remainingQuantity})
                       <input 
                         type="number" 
-                        placeholder="Enter Quantity" 
-                        value={itemQuantities[item.name] || ''} 
+                        placeholder="Enter Quantity Purchased" 
                         onChange={(e) => handleQuantityChange(item.name, e.target.value)} 
+                      />
+                      <input 
+                        type="number" 
+                        placeholder="Enter Total Amount" 
+                        onChange={(e) => handleAmountChange(item.name, e.target.value)} 
                       />
                     </li>
                   );
@@ -734,8 +789,7 @@ const ApproveRequest = () => {
               </label>
               <label>
                 Requestor Email:
-                <input
-                  type="email"
+                <input type="email"
                   name="requestorEmail"
                   value={formData.requestorEmail}
                   onChange={handleFormDataChange}

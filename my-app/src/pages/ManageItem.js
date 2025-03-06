@@ -10,8 +10,6 @@ const ManageItem = () => {
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateDelivered, setDateDelivered] = useState({});
-  const [itemQuantities, setItemQuantities] = useState({});
-  const [requestedQuantities, setRequestedQuantities] = useState({});
   const [imageFiles, setImageFiles] = useState({});
   const [editMode, setEditMode] = useState({});
   const [visibleSections, setVisibleSections] = useState({});
@@ -31,7 +29,7 @@ const ManageItem = () => {
 
   const flattenedItems = items.flatMap((request) =>
     Array.isArray(request.itemName) ? request.itemName.map((item, index) => ({
-      uniqueId: `${request.uniqueId}-${index + 1}`, // Append index to unique ID
+      uniqueId: `${request.uniqueId}-${index + 1}`, // Ensure unique ID
       itemName: item.name,
       purchasedQuantity: item.purchasedQuantity || 0,
       requestedQuantity: item.quantity || 0,
@@ -47,6 +45,7 @@ const ManageItem = () => {
       dateDelivered: request.dateDelivered || '',
       image: request.image || null,
       isApproved: request.approved || false,
+      amount: item.totalAmount || 0, // Ensure amount is included
     })) : []
   );
 
@@ -88,65 +87,55 @@ const ManageItem = () => {
     }
   };  
 
-  const handleDateChange = (id, date) => {
-    setDateDelivered((prev) => ({ ...prev, [id]: date }));
+  const handleDateChange = (uniqueId, date) => {
+    setDateDelivered((prev) => ({ ...prev, [uniqueId]: date }));
   };
 
-  const handleQuantityChange = (id, quantity) => {
-    setItemQuantities((prev) => ({ ...prev, [id]: quantity }));
+  const handleImageChange = (uniqueId, file) => {
+    setImageFiles((prev) => ({ ...prev, [uniqueId]: file }));
   };
 
-  const handleRequestedQuantityChange = (id, quantity) => {
-    setRequestedQuantities((prev) => ({ ...prev, [id]: quantity }));
+  const handleEditToggle = (uniqueId) => {
+    setEditMode((prev) => ({ ...prev, [uniqueId]: !prev[uniqueId] }));
   };
 
-  const handleImageChange = (id, file) => {
-    setImageFiles((prev) => ({ ...prev, [id]: file }));
-  };
-
-  const handleEditToggle = (id) => {
-    setEditMode((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleUpdate = async (uniqueId, itemName) => {
-    const requestToUpdate = flattenedItems.find(item => item.uniqueId === uniqueId && item.itemName === itemName);
-    
+  const handleUpdate = async (uniqueId) => {
+    const requestToUpdate = flattenedItems.find(item => item.uniqueId === uniqueId);
+  
     if (!requestToUpdate) {
       alert("Item not found for update.");
       return;
     }
-
+  
     const requestRef = doc(db, 'requests', requestToUpdate.requestId);
     let imageUrl = null;
-
+  
     // Handle image upload if a new image file is provided
-    if (imageFiles[requestToUpdate.requestId]) {
+    if (imageFiles[uniqueId]) {
       try {
-        const storageRef = ref(storage, `images/${imageFiles[requestToUpdate.requestId].name}`);
-        await uploadBytes(storageRef, imageFiles[requestToUpdate.requestId]);
+        const storageRef = ref(storage, `images/${imageFiles[uniqueId].name}`);
+        await uploadBytes(storageRef, imageFiles[uniqueId]);
         imageUrl = await getDownloadURL(storageRef);
       } catch (error) {
         console.error("Error uploading image:", error);
-        imageUrl = null; // Handle the error as needed
+        imageUrl = requestToUpdate.image; // Keep the old image URL if upload fails
       }
+    } else {
+      imageUrl = requestToUpdate.image; // If no new image, retain the current one
     }
-
-    // Update the document in Firestore
+  
+    // Update Firestore document with the new values
     await updateDoc(requestRef, {
-      dateDelivered: dateDelivered[requestToUpdate.requestId] || null,
-      purchasedQuantity: itemQuantities[requestToUpdate.requestId] || null,
-      requestedQuantity: requestedQuantities[requestToUpdate.requestId] || null,
-      image: imageUrl || null,
+      dateDelivered: dateDelivered[uniqueId] || requestToUpdate.dateDelivered,
+      image: imageUrl, // Save the image URL
     });
-
+  
     // Reset the state for the updated item
-    setDateDelivered((prev) => ({ ...prev, [requestToUpdate.requestId]: '' }));
-    setItemQuantities((prev) => ({ ...prev, [requestToUpdate.requestId]: null }));
-    setRequestedQuantities((prev) => ({ ...prev, [requestToUpdate.requestId]: null }));
-    setImageFiles((prev) => ({ ...prev, [requestToUpdate.requestId]: null }));
-    setEditMode((prev) => ({ ...prev, [requestToUpdate.requestId]: false }));
+    setDateDelivered((prev) => ({ ...prev, [uniqueId]: '' }));
+    setImageFiles((prev) => ({ ...prev, [uniqueId]: null }));
+    setEditMode((prev) => ({ ...prev, [uniqueId]: false }));
   };
-
+  
   const filteredItems = flattenedItems.filter(item => 
     item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -190,6 +179,7 @@ const ManageItem = () => {
                   <th data-label="Item Name">Item Name</th>
                   <th data-label="Requested Quantity">Requested Quantity</th>
                   <th data-label="Delivered Quantity">Delivered Quantity</th>
+                  <th data-label="Amount">Amount</th> {/* Added Amount column */}
                   <th data-label="Supplier Name">Supplier Name</th>
                   <th data-label="Category">Category</th>
                   <th data-label="Department">Department</th>
@@ -207,7 +197,8 @@ const ManageItem = () => {
                   <tr key={item.uniqueId}>
                     <td>
                       <span 
-                        style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
+                        style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                        onClick={() => copyToClipboard(item.uniqueId)}
                       >
                         {item.uniqueId}
                       </span>
@@ -220,24 +211,11 @@ const ManageItem = () => {
                         {item.itemName}
                       </span>
                     </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={requestedQuantities[item.requestId] || item.requestedQuantity}
-                        onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
-                        disabled={!editMode[item.requestId]}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={itemQuantities[item.requestId] || item.purchasedQuantity}
-                        onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
-                        disabled={!editMode[item.requestId]}
-                      />
-                    </td>
+                    <td>{item.requestedQuantity}</td> {/* Display as plain text */}
+                    <td>{item.purchasedQuantity}</td> {/* Display as plain text */}
+                    <td>{item.amount}</td> {/* Display amount */}
                     <td>{item.supplierName}</td>
-                    <td>{item.category}</td>
+                    < td>{item.category}</td>
                     <td>{item.department}</td>
                     <td>{item.program}</td>
                     <td>{item.requestDate}</td>
@@ -246,24 +224,24 @@ const ManageItem = () => {
                     <td>
                       <input
                         type="date"
-                        value={dateDelivered[item.requestId] || item.dateDelivered}
-                        onChange={(e) => handleDateChange(item.requestId, e.target.value)}
-                        disabled={!editMode[item.requestId]}
+                        value={dateDelivered[item.uniqueId] || item.dateDelivered}
+                        onChange={(e) => handleDateChange(item.uniqueId, e.target.value)}
+                        disabled={!editMode[item.uniqueId]} // Only editable in edit mode
                       />
                     </td>
                     <td>
-                      {editMode[item.requestId] && (
+                      {editMode[item.uniqueId] && (
                         <WebcamCapture 
                           requestId={item.requestId} 
-                          editMode={editMode[item.requestId]} 
-                          onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
+                          editMode={editMode[item.uniqueId]} 
+                          onCapture={(imageSrc) => handleImageChange(item.uniqueId, imageSrc)}
                         />
                       )}
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
-                        disabled={!editMode[item.requestId]}
+                        onChange={(e) => handleImageChange(item.uniqueId, e.target.files[0])}
+                        disabled={!editMode[item.uniqueId]} // Only editable in edit mode
                       />
                     </td>
                     <td>
@@ -278,10 +256,10 @@ const ManageItem = () => {
                       >
                         View Image
                       </button>
-                      {editMode[item.requestId] ? (
-                        <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
+                      {editMode[item.uniqueId] ? (
+                        <button onClick={() => handleUpdate(item.uniqueId)}>Save</button>
                       ) : (
-                        <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                        <button onClick={() => handleEditToggle(item.uniqueId)}>Edit</button>
                       )}
                       <button 
                         onClick={() => handleDelete(item.requestId)} 
@@ -317,6 +295,7 @@ const ManageItem = () => {
                         <th data-label="Item Name">Item Name</th>
                         <th data-label="Requested Quantity">Requested Quantity</th>
                         <th data-label="Delivered Quantity">Delivered Quantity</th>
+                        <th data-label="Amount">Amount</th> {/* Added Amount column */}
                         <th data-label="Supplier Name">Supplier Name</th>
                         <th data-label="Category">Category</th>
                         <th data-label="Department">Department</th>
@@ -334,8 +313,8 @@ const ManageItem = () => {
                         <tr key={item.uniqueId}>
                           <td>
                             <span 
-                              style={{ cursor : 'pointer', color: 'blue', textDecoration: 'underline' }} 
-                              onClick={() => copyToClipboard(item.uniqueId)} // Copy unique ID to clipboard
+                              style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} 
+                              onClick={() => copyToClipboard(item.uniqueId)}
                             >
                               {item.uniqueId}
                             </span>
@@ -348,22 +327,9 @@ const ManageItem = () => {
                               {item.itemName}
                             </span>
                           </td>
-                          <td>
-                            <input
-                              type="number"
-                              value={requestedQuantities[item.requestId] || item.requestedQuantity}
-                              onChange={(e) => handleRequestedQuantityChange(item.requestId, e.target.value)}
-                              disabled={!editMode[item.requestId]}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              value={itemQuantities[item.requestId] || item.purchasedQuantity}
-                              onChange={(e) => handleQuantityChange(item.requestId, e.target.value)}
-                              disabled={!editMode[item.requestId]}
-                            />
-                          </td>
+                          <td>{item.requestedQuantity}</td> {/* Display as plain text */}
+                          <td>{item.purchasedQuantity}</td> {/* Display as plain text */}
+                          <td>{item.amount}</td> {/* Display amount */}
                           <td>{item.supplierName}</td>
                           <td>{item.category}</td>
                           <td>{item.department}</td>
@@ -374,24 +340,24 @@ const ManageItem = () => {
                           <td>
                             <input
                               type="date"
-                              value={dateDelivered[item.requestId] || item.dateDelivered}
-                              onChange={(e) => handleDateChange(item.requestId, e.target.value)}
-                              disabled={!editMode[item.requestId]}
+                              value={dateDelivered[item.uniqueId] || item.dateDelivered}
+                              onChange={(e) => handleDateChange(item.uniqueId, e.target.value)}
+                              disabled={!editMode[item.uniqueId]} // Only editable in edit mode
                             />
                           </td>
                           <td>
-                            {editMode[item.requestId] && (
+                            {editMode[item.uniqueId] && (
                               <WebcamCapture 
                                 requestId={item.requestId} 
-                                editMode={editMode[item.requestId]} 
-                                onCapture={(imageSrc) => handleImageChange(item.requestId, imageSrc)} // Handle captured image
+                                editMode={editMode[item.uniqueId]} 
+                                onCapture={(imageSrc) => handleImageChange(item.uniqueId, imageSrc)}
                               />
                             )}
                             <input
                               type="file"
                               accept="image/*"
-                              onChange={(e) => handleImageChange(item.requestId, e.target.files[0])}
-                              disabled={!editMode[item.requestId]}
+                              onChange={(e) => handleImageChange(item.uniqueId, e.target.files[0])}
+                              disabled={!editMode[item.uniqueId]} // Only editable in edit mode
                             />
                           </td>
                           <td>
@@ -406,10 +372,10 @@ const ManageItem = () => {
                             >
                               View Image
                             </button>
-                            {editMode[item.requestId] ? (
-                              <button onClick={() => handleUpdate(item.uniqueId, item.itemName)}>Save</button>
+                            {editMode[item.uniqueId] ? (
+                              <button onClick={() => handleUpdate(item.uniqueId)}>Save</button>
                             ) : (
-                              <button onClick={() => handleEditToggle(item.requestId)}>Edit</button>
+                              <button onClick={() => handleEditToggle(item.uniqueId)}>Edit</button>
                             )}
                             <button 
                               onClick={() => handleDelete(item.requestId)} 

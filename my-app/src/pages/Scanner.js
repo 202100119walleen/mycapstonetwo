@@ -68,20 +68,6 @@ const ScannerPage = () => {
     fetchDevices();
   }, []);
 
-  // Handle search functionality
-  const handleSearch = () => {
-    if (searchQuery.trim() === '') {
-      // If the search query is empty, reset to show all items
-      setFilteredItems(items);
-    } else {
-      // Filter items based on the search query
-      const results = items.filter(item =>
-        item.uniqueId && item.uniqueId.includes(searchQuery)
-      );
-      setFilteredItems(results);
-    }
-  };
-
   // Start scanning barcodes
   const startScanning = () => {
     if (videoRef.current && selectedDeviceId) {
@@ -99,6 +85,20 @@ const ScannerPage = () => {
       });
     } else {
       setError("Video element or selected device is not available.");
+    }
+  };
+
+  // Handle search functionality
+  const handleSearch = () => {
+    if (searchQuery.trim() === '') {
+      // If the search query is empty, reset to show all items
+      setFilteredItems(items);
+    } else {
+      // Filter items based on the search query
+      const results = items.filter(item =>
+        item.uniqueId && item.uniqueId.includes(searchQuery)
+      );
+      setFilteredItems(results);
     }
   };
 
@@ -126,6 +126,24 @@ const ScannerPage = () => {
     }
   };
 
+  // Display camera preview
+  useEffect(() => {
+    if (videoRef.current && selectedDeviceId) {
+      const constraints = {
+        video: { deviceId: { exact: selectedDeviceId } }
+      };
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then((stream) => {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        })
+        .catch((error) => {
+          console.error("Error accessing camera:", error);
+          setError("Failed to access camera. Please check your permissions.");
+        });
+    }
+  }, [selectedDeviceId]);
+
   return (
     <div>
       <h1>Scanner Page</h1>
@@ -150,6 +168,7 @@ const ScannerPage = () => {
           ))}
         </select>
       )}
+      <video ref={videoRef} style={{ width: '100%', height: 'auto', display: showCameraSelection ? 'block' : 'none' }} />
       <table>
         <thead>
           <tr>
@@ -185,7 +204,6 @@ const ScannerPage = () => {
           ))}
         </tbody>
       </table>
-      <video ref={videoRef} style={{ display: 'none' }} />
     </div>
   );
 };
